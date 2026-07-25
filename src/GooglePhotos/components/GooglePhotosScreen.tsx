@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  InteractionManager,
   LayoutChangeEvent,
   StyleSheet,
   View,
@@ -14,6 +15,7 @@ import Animated, {
 import { COLUMN_COUNTS, INITIAL_ZOOM_INDEX, PHOTOS } from '../constants';
 import { useGooglePhotosGrid } from '../hooks/useGooglePhotosGrid';
 import { computeJustifiedLayout } from '../utils';
+import { ZoomLayout } from '../types';
 import FullScreenPhoto from './FullScreenPhoto';
 import GridList from './GridList';
 import ScrollTab from './ScrollTab';
@@ -29,15 +31,43 @@ export default function GooglePhotosScreen() {
     setViewportHeight(e.nativeEvent.layout.height);
   }, []);
 
-  const layouts = useMemo(
-    () =>
-      COLUMN_COUNTS.map((columnCount) =>
-        computeJustifiedLayout(PHOTOS, width, columnCount),
-      ),
-    [width],
+  const [activeLevel, setActiveLevel] = useState(INITIAL_ZOOM_INDEX);
+  const activeLevelRef = useRef(activeLevel);
+  activeLevelRef.current = activeLevel;
+
+  const [layouts, setLayouts] = useState<(ZoomLayout | null)[]>(() =>
+    COLUMN_COUNTS.map((columnCount, level) =>
+      level === INITIAL_ZOOM_INDEX
+        ? computeJustifiedLayout(PHOTOS, width, columnCount)
+        : null,
+    ),
   );
 
-  const [activeLevel, setActiveLevel] = useState(INITIAL_ZOOM_INDEX);
+  const isFirstLayoutRef = useRef(true);
+  useEffect(() => {
+    if (isFirstLayoutRef.current) {
+      isFirstLayoutRef.current = false;
+    } else {
+      const active = activeLevelRef.current;
+      setLayouts(
+        COLUMN_COUNTS.map((columnCount, level) =>
+          level === active
+            ? computeJustifiedLayout(PHOTOS, width, columnCount)
+            : null,
+        ),
+      );
+    }
+    const task = InteractionManager.runAfterInteractions(() => {
+      setLayouts((prev) =>
+        prev.map(
+          (layout, level) =>
+            layout ??
+            computeJustifiedLayout(PHOTOS, width, COLUMN_COUNTS[level]),
+        ),
+      );
+    });
+    return () => task.cancel();
+  }, [width]);
   const [zooming, setZooming] = useState(false);
   const currentLevel = useSharedValue(INITIAL_ZOOM_INDEX);
   useEffect(() => {
@@ -62,12 +92,12 @@ export default function GooglePhotosScreen() {
 
   const estimatedItemSizes = useMemo(
     () =>
-      layouts.map((layout) =>
-        layout.listData.length > 0
+      layouts.map((layout, level) =>
+        layout && layout.listData.length > 0
           ? layout.contentHeight / layout.listData.length
-          : 100,
+          : width / COLUMN_COUNTS[level],
       ),
-    [layouts],
+    [layouts, width],
   );
 
   const [fullScreenPhotoId, setFullScreenPhotoId] = useState<string | null>(
@@ -114,7 +144,7 @@ export default function GooglePhotosScreen() {
         <View style={styles.viewport}>
           {layouts.map((layout, level) => (
             <GridList
-              key={layout.columnCount}
+              key={COLUMN_COUNTS[level]}
               layout={layout}
               level={level}
               currentLevel={currentLevel}

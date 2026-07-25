@@ -30,7 +30,7 @@ const ScrollTab = ({
   currentLevel,
   listRefs,
 }: {
-  layouts: ZoomLayout[];
+  layouts: (ZoomLayout | null)[];
   viewportHeight: number;
   scrollY: SharedValue<number>;
   currentLevel: SharedValue<number>;
@@ -43,6 +43,12 @@ const ScrollTab = ({
       SCROLL_TAB_BOTTOM_INSET -
       SCROLL_TAB_THUMB_HEIGHT,
   );
+
+  const maxScrollFor = (level: number) => {
+    'worklet';
+    const layout = layouts[level];
+    return layout ? Math.max(0, layout.contentHeight - viewportHeight) : 0;
+  };
 
   const isDragging = useSharedValue(false);
   const thumbOpacity = useSharedValue(0);
@@ -64,10 +70,7 @@ const ScrollTab = ({
       thumbOpacity.value = 1;
     })
     .onChange((e) => {
-      const maxScroll = Math.max(
-        0,
-        layouts[currentLevel.value].contentHeight - viewportHeight,
-      );
+      const maxScroll = maxScrollFor(currentLevel.value);
       const next = clampValue(
         scrollY.value + (e.changeY / trackHeight) * maxScroll,
         0,
@@ -81,10 +84,7 @@ const ScrollTab = ({
     });
 
   const thumbStyle = useAnimatedStyle(() => {
-    const maxScroll = Math.max(
-      0,
-      layouts[currentLevel.value].contentHeight - viewportHeight,
-    );
+    const maxScroll = maxScrollFor(currentLevel.value);
     const ratio = maxScroll > 0 ? scrollY.value / maxScroll : 0;
     return {
       opacity: maxScroll > 0 ? thumbOpacity.value : 0,
@@ -97,12 +97,15 @@ const ScrollTab = ({
   }));
 
   const bubbleTextProps = useAnimatedProps(() => {
-    const rows = layouts[currentLevel.value].rows;
+    const layout = layouts[currentLevel.value];
+    if (!layout) {
+      return { text: '' } as any;
+    }
     const rowIndex = findRowIndexForOffset(
-      rows,
+      layout.rows,
       scrollY.value + viewportHeight * 0.25,
     );
-    return { text: rows[rowIndex]?.label ?? '' } as any;
+    return { text: layout.rows[rowIndex]?.label ?? '' } as any;
   });
 
   return (

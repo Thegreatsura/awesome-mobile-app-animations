@@ -30,7 +30,7 @@ export const useGooglePhotosGrid = ({
   onZoomStart,
   onZoomEnd,
 }: {
-  layouts: ZoomLayout[];
+  layouts: (ZoomLayout | null)[];
   viewportHeight: number;
   scrollY: SharedValue<number>;
   currentLevel: SharedValue<number>;
@@ -60,7 +60,8 @@ export const useGooglePhotosGrid = ({
   const gridGesture = useMemo(() => {
     const maxScrollFor = (level: number) => {
       'worklet';
-      return Math.max(0, layouts[level].contentHeight - viewportHeight);
+      const l = layouts[level];
+      return l ? Math.max(0, l.contentHeight - viewportHeight) : 0;
     };
 
     const pinch = Gesture.Pinch()
@@ -73,6 +74,9 @@ export const useGooglePhotosGrid = ({
         targetLevel.value = currentLevel.value;
         runOnJS(onZoomStart)();
         const layout = layouts[currentLevel.value];
+        if (!layout) {
+          return;
+        }
         const item = findItemAtPoint(
           layout,
           e.focalX,
@@ -93,10 +97,12 @@ export const useGooglePhotosGrid = ({
           resolvedDirection.value = direction;
           const level = currentLevel.value;
           const target = level + direction;
-          if (target >= 0 && target < layouts.length) {
+          const targetLayout =
+            target >= 0 && target < layouts.length ? layouts[target] : null;
+          if (targetLayout) {
             isFullscreenPinch.value = false;
             targetLevel.value = target;
-            const targetItem = layouts[target].itemById[anchorId.value];
+            const targetItem = targetLayout.itemById[anchorId.value];
             const targetCenterY = targetItem
               ? targetItem.y + targetItem.h / 2
               : 0;
@@ -109,7 +115,10 @@ export const useGooglePhotosGrid = ({
           } else if (target >= layouts.length) {
             isFullscreenPinch.value = true;
             targetLevel.value = level;
-            const item = layouts[level].itemById[anchorId.value];
+            const currentLayout = layouts[level];
+            const item = currentLayout
+              ? currentLayout.itemById[anchorId.value]
+              : undefined;
             if (item) {
               fsRectX.value = item.x;
               fsRectY.value = item.y - scrollY.value;
@@ -182,6 +191,9 @@ export const useGooglePhotosGrid = ({
           return;
         }
         const layout = layouts[currentLevel.value];
+        if (!layout) {
+          return;
+        }
         const item = findItemAtPoint(layout, e.x, scrollY.value + e.y);
         fsRectX.value = item.x;
         fsRectY.value = item.y - scrollY.value;

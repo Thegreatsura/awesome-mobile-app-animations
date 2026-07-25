@@ -13,6 +13,9 @@ import { LayoutItem, ListEntry, ZoomLayout } from '../types';
 
 const PLACEHOLDER_COLOR = '#2f2f2f';
 
+const EMPTY_LIST_DATA: ListEntry[] = [];
+const EMPTY_ITEMS: LayoutItem[] = [];
+
 const RowCell = memo(
   ({ entry, items }: { entry: ListEntry; items: LayoutItem[] }) => {
     if (entry.kind !== 'row') {
@@ -71,7 +74,7 @@ const GridList = ({
   listScrollRef,
   estimatedItemSize,
 }: {
-  layout: ZoomLayout;
+  layout: ZoomLayout | null;
   level: number;
   currentLevel: SharedValue<number>;
   targetLevel: SharedValue<number>;
@@ -106,7 +109,7 @@ const GridList = ({
       <AnimatedLegendList
         refScrollView={listScrollRef}
         sharedValues={{ scrollOffset }}
-        data={layout.listData}
+        data={layout?.listData ?? EMPTY_LIST_DATA}
         extraData={layout}
         keyExtractor={(item: ListEntry) => item.key}
         getItemType={(item: ListEntry) => item.kind}
@@ -121,7 +124,7 @@ const GridList = ({
           item.kind === 'header' ? (
             <HeaderCell entry={item} />
           ) : (
-            <RowCell entry={item} items={layout.items} />
+            <RowCell entry={item} items={layout?.items ?? EMPTY_ITEMS} />
           )
         }
       />
