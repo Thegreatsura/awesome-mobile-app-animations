@@ -73,6 +73,7 @@ const GridList = ({
   scrollOffset,
   listScrollRef,
   estimatedItemSize,
+  drawDistance,
 }: {
   layout: ZoomLayout | null;
   level: number;
@@ -84,6 +85,7 @@ const GridList = ({
   scrollOffset: SharedValue<number>;
   listScrollRef: React.Ref<Animated.ScrollView>;
   estimatedItemSize: number;
+  drawDistance: number;
 }) => {
   const wrapperStyle = useAnimatedStyle(() => {
     let opacity = 0;
@@ -117,7 +119,7 @@ const GridList = ({
         estimatedItemSize={estimatedItemSize}
         recycleItems
         scrollEnabled={scrollEnabled}
-        drawDistance={estimatedItemSize * 8}
+        drawDistance={drawDistance}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
         renderItem={({ item }: LegendListRenderItemProps<ListEntry>) =>

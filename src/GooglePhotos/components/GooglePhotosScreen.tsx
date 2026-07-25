@@ -155,6 +155,9 @@ export default function GooglePhotosScreen() {
               scrollOffset={scrollOffsets[level]}
               listScrollRef={listRefs[level]}
               estimatedItemSize={estimatedItemSizes[level]}
+              drawDistance={
+                level === activeLevel ? viewportHeight : viewportHeight * 0.5
+              }
             />
           ))}
         </View>
