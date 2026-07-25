@@ -11,6 +11,8 @@ import {
   FULLSCREEN_COMMIT_THRESHOLD,
   INITIAL_ZOOM_INDEX,
   PINCH_COMMIT_THRESHOLD,
+  PINCH_ZOOM_IN_THROW,
+  PINCH_ZOOM_OUT_THROW,
 } from '../constants';
 import { ZoomLayout } from '../types';
 import { clampValue, findItemAtPoint } from '../utils';
@@ -119,7 +121,7 @@ export const useGooglePhotosGrid = ({
           return;
         }
         const direction = e.scale > 1.03 ? 1 : e.scale < 0.97 ? -1 : 0;
-        if (direction !== 0 && direction !== resolvedDirection.value) {
+        if (direction !== 0 && resolvedDirection.value === 0) {
           resolvedDirection.value = direction;
           const level = currentLevel.value;
           const target = level + direction;
@@ -156,8 +158,8 @@ export const useGooglePhotosGrid = ({
         } else if (targetLevel.value !== currentLevel.value) {
           progress.value =
             targetLevel.value > currentLevel.value
-              ? clampValue((e.scale - 1) / 0.8, 0, 1)
-              : clampValue((1 - e.scale) / 0.4, 0, 1);
+              ? clampValue((e.scale - 1) / PINCH_ZOOM_IN_THROW, 0, 1)
+              : clampValue((1 - e.scale) / PINCH_ZOOM_OUT_THROW, 0, 1);
         } else {
           progress.value = 0;
         }
