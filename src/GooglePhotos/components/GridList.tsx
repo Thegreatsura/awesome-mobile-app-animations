@@ -41,6 +41,8 @@ const RowCell = memo(
               backgroundColor: PLACEHOLDER_COLOR,
             }}
             contentFit="cover"
+            cachePolicy="memory-disk"
+            allowDownscaling
             transition={200}
           />
         ))}

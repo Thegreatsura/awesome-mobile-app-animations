@@ -6,6 +6,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useAnimatedRef,
@@ -19,6 +20,8 @@ import { ZoomLayout } from '../types';
 import FullScreenPhoto from './FullScreenPhoto';
 import GridList from './GridList';
 import ScrollTab from './ScrollTab';
+
+const FULLSCREEN_PREFETCH_COUNT = 30;
 
 if (COLUMN_COUNTS.length !== 3) {
   throw new Error('GooglePhotosScreen expects exactly 3 zoom levels');
@@ -68,6 +71,17 @@ export default function GooglePhotosScreen() {
     });
     return () => task.cancel();
   }, [width]);
+
+  useEffect(() => {
+    const task = InteractionManager.runAfterInteractions(() => {
+      Image.prefetch(
+        PHOTOS.slice(0, FULLSCREEN_PREFETCH_COUNT).map((photo) => photo.fullUri),
+        { cachePolicy: 'disk' },
+      );
+    });
+    return () => task.cancel();
+  }, []);
+
   const [zooming, setZooming] = useState(false);
   const currentLevel = useSharedValue(INITIAL_ZOOM_INDEX);
   useEffect(() => {
