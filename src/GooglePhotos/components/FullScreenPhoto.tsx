@@ -1,4 +1,5 @@
-import { Image, StyleSheet, useWindowDimensions } from 'react-native';
+import { StyleSheet, useWindowDimensions } from 'react-native';
+import { Image } from 'expo-image';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   SharedValue,
@@ -99,7 +100,8 @@ const FullScreenPhoto = ({
           <Image
             source={{ uri: photo.fullUri }}
             style={styles.photo}
-            resizeMode="contain"
+            contentFit="contain"
+            transition={200}
           />
         </Animated.View>
       </Animated.View>
