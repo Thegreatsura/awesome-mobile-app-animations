@@ -52,11 +52,16 @@ const ScrollTab = ({
 
   const isDragging = useSharedValue(false);
   const thumbOpacity = useSharedValue(0);
+  const lastFadeScheduledAt = useSharedValue(-1e9);
 
   useAnimatedReaction(
     () => scrollY.value,
     (value, previous) => {
-      if (previous !== null && value !== previous) {
+      if (previous === null || value === previous) {
+        return;
+      }
+      if (Math.abs(value - lastFadeScheduledAt.value) > 8) {
+        lastFadeScheduledAt.value = value;
         thumbOpacity.value = 1;
         thumbOpacity.value = withDelay(1200, withTiming(0, { duration: 400 }));
       }

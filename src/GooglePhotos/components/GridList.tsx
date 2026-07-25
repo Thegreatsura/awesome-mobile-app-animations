@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useCallback } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import Animated, {
@@ -15,6 +15,10 @@ const PLACEHOLDER_COLOR = '#2f2f2f';
 
 const EMPTY_LIST_DATA: ListEntry[] = [];
 const EMPTY_ITEMS: LayoutItem[] = [];
+
+const keyExtractor = (item: ListEntry) => item.key;
+const getItemType = (item: ListEntry) => item.kind;
+const getFixedItemSize = (item: ListEntry) => item.height;
 
 const RowCell = memo(
   ({ entry, items }: { entry: ListEntry; items: LayoutItem[] }) => {
@@ -105,6 +109,17 @@ const GridList = ({
     return { opacity, transform: [{ scale }] };
   });
 
+  const items = layout?.items ?? EMPTY_ITEMS;
+  const renderItem = useCallback(
+    ({ item }: LegendListRenderItemProps<ListEntry>) =>
+      item.kind === 'header' ? (
+        <HeaderCell entry={item} />
+      ) : (
+        <RowCell entry={item} items={items} />
+      ),
+    [items],
+  );
+
   return (
     <Animated.View
       style={[StyleSheet.absoluteFill, wrapperStyle]}
@@ -115,22 +130,16 @@ const GridList = ({
         sharedValues={{ scrollOffset }}
         data={layout?.listData ?? EMPTY_LIST_DATA}
         extraData={layout}
-        keyExtractor={(item: ListEntry) => item.key}
-        getItemType={(item: ListEntry) => item.kind}
-        getFixedItemSize={(item: ListEntry) => item.height}
+        keyExtractor={keyExtractor}
+        getItemType={getItemType}
+        getFixedItemSize={getFixedItemSize}
         estimatedItemSize={estimatedItemSize}
         recycleItems
         scrollEnabled={scrollEnabled}
         drawDistance={drawDistance}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
-        renderItem={({ item }: LegendListRenderItemProps<ListEntry>) =>
-          item.kind === 'header' ? (
-            <HeaderCell entry={item} />
-          ) : (
-            <RowCell entry={item} items={layout?.items ?? EMPTY_ITEMS} />
-          )
-        }
+        renderItem={renderItem}
       />
     </Animated.View>
   );
