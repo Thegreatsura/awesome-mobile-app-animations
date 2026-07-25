@@ -1,8 +1,9 @@
 import { StyleSheet, TextInput } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
+  AnimatedRef,
   SharedValue,
-  cancelAnimation,
+  scrollTo,
   useAnimatedProps,
   useAnimatedReaction,
   useAnimatedStyle,
@@ -27,11 +28,13 @@ const ScrollTab = ({
   viewportHeight,
   scrollY,
   currentLevel,
+  listRefs,
 }: {
   layouts: ZoomLayout[];
   viewportHeight: number;
   scrollY: SharedValue<number>;
   currentLevel: SharedValue<number>;
+  listRefs: AnimatedRef<Animated.ScrollView>[];
 }) => {
   const trackHeight = Math.max(
     1,
@@ -57,7 +60,6 @@ const ScrollTab = ({
   const thumbPan = Gesture.Pan()
     .hitSlop({ left: 20, right: 8, top: 10, bottom: 10 })
     .onStart(() => {
-      cancelAnimation(scrollY);
       isDragging.value = true;
       thumbOpacity.value = 1;
     })
@@ -66,11 +68,12 @@ const ScrollTab = ({
         0,
         layouts[currentLevel.value].contentHeight - viewportHeight,
       );
-      scrollY.value = clampValue(
+      const next = clampValue(
         scrollY.value + (e.changeY / trackHeight) * maxScroll,
         0,
         maxScroll,
       );
+      scrollTo(listRefs[currentLevel.value], 0, next, false);
     })
     .onEnd(() => {
       isDragging.value = false;

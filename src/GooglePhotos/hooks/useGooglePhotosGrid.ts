@@ -1,10 +1,12 @@
 import { useMemo } from 'react';
 import { Gesture } from 'react-native-gesture-handler';
-import {
+import Animated, {
+  AnimatedRef,
+  SharedValue,
   cancelAnimation,
   runOnJS,
+  scrollTo,
   useSharedValue,
-  withDecay,
   withTiming,
 } from 'react-native-reanimated';
 import {
@@ -20,14 +22,24 @@ import { clampValue, findItemAtPoint } from '../utils';
 export const useGooglePhotosGrid = ({
   layouts,
   viewportHeight,
+  scrollY,
+  currentLevel,
+  listRefs,
   onOpenPhoto,
+  onCommitLevel,
+  onZoomStart,
+  onZoomEnd,
 }: {
   layouts: ZoomLayout[];
   viewportHeight: number;
+  scrollY: SharedValue<number>;
+  currentLevel: SharedValue<number>;
+  listRefs: AnimatedRef<Animated.ScrollView>[];
   onOpenPhoto: (photoId: string) => void;
+  onCommitLevel: (targetLevel: number) => void;
+  onZoomStart: () => void;
+  onZoomEnd: () => void;
 }) => {
-  const scrollY = useSharedValue(0);
-  const currentLevel = useSharedValue(INITIAL_ZOOM_INDEX);
   const targetLevel = useSharedValue(INITIAL_ZOOM_INDEX);
   const progress = useSharedValue(0);
   const pinchActive = useSharedValue(false);
@@ -51,59 +63,15 @@ export const useGooglePhotosGrid = ({
       return Math.max(0, layouts[level].contentHeight - viewportHeight);
     };
 
-    const settleZoom = () => {
-      'worklet';
-      if (!pinchActive.value) {
-        return;
-      }
-      cancelAnimation(progress);
-      if (
-        !isFullscreenPinch.value &&
-        targetLevel.value !== currentLevel.value &&
-        progress.value > PINCH_COMMIT_THRESHOLD
-      ) {
-        scrollY.value = targetOffset.value;
-        currentLevel.value = targetLevel.value;
-      }
-      progress.value = 0;
-      targetLevel.value = currentLevel.value;
-      pinchActive.value = false;
-    };
-
-    const pan = Gesture.Pan()
-      .maxPointers(1)
-      .onStart(() => {
-        settleZoom();
-        cancelAnimation(scrollY);
-      })
-      .onChange((e) => {
-        if (pinchActive.value || fsOpen.value) {
-          return;
-        }
-        scrollY.value = clampValue(
-          scrollY.value - e.changeY,
-          0,
-          maxScrollFor(currentLevel.value),
-        );
-      })
-      .onEnd((e) => {
-        if (pinchActive.value || fsOpen.value) {
-          return;
-        }
-        scrollY.value = withDecay({
-          velocity: -e.velocityY,
-          clamp: [0, maxScrollFor(currentLevel.value)],
-        });
-      });
-
     const pinch = Gesture.Pinch()
       .onStart((e) => {
         if (fsOpen.value) {
           return;
         }
-        settleZoom();
-        cancelAnimation(scrollY);
         cancelAnimation(progress);
+        progress.value = 0;
+        targetLevel.value = currentLevel.value;
+        runOnJS(onZoomStart)();
         const layout = layouts[currentLevel.value];
         const item = findItemAtPoint(
           layout,
@@ -117,7 +85,7 @@ export const useGooglePhotosGrid = ({
         pinchActive.value = true;
       })
       .onUpdate((e) => {
-        if (fsOpen.value) {
+        if (fsOpen.value || !pinchActive.value) {
           return;
         }
         const direction = e.scale > 1.03 ? 1 : e.scale < 0.97 ? -1 : 0;
@@ -137,6 +105,7 @@ export const useGooglePhotosGrid = ({
               0,
               maxScrollFor(target),
             );
+            scrollTo(listRefs[target], 0, targetOffset.value, false);
           } else if (target >= layouts.length) {
             isFullscreenPinch.value = true;
             targetLevel.value = level;
@@ -176,18 +145,22 @@ export const useGooglePhotosGrid = ({
           } else {
             fsProgress.value = withTiming(0, { duration: 180 });
           }
+          runOnJS(onZoomEnd)();
           return;
         }
         if (
           targetLevel.value !== currentLevel.value &&
           progress.value > PINCH_COMMIT_THRESHOLD
         ) {
+          const committed = targetLevel.value;
           progress.value = withTiming(1, { duration: 220 }, (finished) => {
             if (finished) {
-              scrollY.value = targetOffset.value;
-              currentLevel.value = targetLevel.value;
+              currentLevel.value = committed;
+              targetLevel.value = committed;
               progress.value = 0;
               pinchActive.value = false;
+              runOnJS(onCommitLevel)(committed);
+              runOnJS(onZoomEnd)();
             }
           });
         } else {
@@ -195,6 +168,7 @@ export const useGooglePhotosGrid = ({
             if (finished) {
               targetLevel.value = currentLevel.value;
               pinchActive.value = false;
+              runOnJS(onZoomEnd)();
             }
           });
         }
@@ -207,7 +181,6 @@ export const useGooglePhotosGrid = ({
         if (!success || pinchActive.value || fsOpen.value) {
           return;
         }
-        cancelAnimation(scrollY);
         const layout = layouts[currentLevel.value];
         const item = findItemAtPoint(layout, e.x, scrollY.value + e.y);
         fsRectX.value = item.x;
@@ -219,11 +192,15 @@ export const useGooglePhotosGrid = ({
         fsProgress.value = withTiming(1, { duration: 260 });
       });
 
-    return Gesture.Simultaneous(pinch, pan, tap);
+    return Gesture.Simultaneous(pinch, tap);
   }, [
     layouts,
     viewportHeight,
+    listRefs,
     onOpenPhoto,
+    onCommitLevel,
+    onZoomStart,
+    onZoomEnd,
     scrollY,
     currentLevel,
     targetLevel,
@@ -244,8 +221,6 @@ export const useGooglePhotosGrid = ({
 
   return {
     gridGesture,
-    scrollY,
-    currentLevel,
     targetLevel,
     progress,
     pinchActive,

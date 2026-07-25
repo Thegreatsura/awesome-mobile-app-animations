@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   LayoutChangeEvent,
   StyleSheet,
@@ -6,12 +6,21 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
-import { COLUMN_COUNTS, PHOTOS } from '../constants';
+import Animated, {
+  useAnimatedRef,
+  useDerivedValue,
+  useSharedValue,
+} from 'react-native-reanimated';
+import { COLUMN_COUNTS, INITIAL_ZOOM_INDEX, PHOTOS } from '../constants';
 import { useGooglePhotosGrid } from '../hooks/useGooglePhotosGrid';
 import { computeJustifiedLayout } from '../utils';
 import FullScreenPhoto from './FullScreenPhoto';
-import GridLayer from './GridLayer';
+import GridList from './GridList';
 import ScrollTab from './ScrollTab';
+
+if (COLUMN_COUNTS.length !== 3) {
+  throw new Error('GooglePhotosScreen expects exactly 3 zoom levels');
+}
 
 export default function GooglePhotosScreen() {
   const { width, height } = useWindowDimensions();
@@ -27,8 +36,37 @@ export default function GooglePhotosScreen() {
       ),
     [width],
   );
-  const contentHeights = useMemo(
-    () => layouts.map((layout) => layout.contentHeight),
+
+  const [activeLevel, setActiveLevel] = useState(INITIAL_ZOOM_INDEX);
+  const [zooming, setZooming] = useState(false);
+  const currentLevel = useSharedValue(INITIAL_ZOOM_INDEX);
+  useEffect(() => {
+    currentLevel.value = activeLevel;
+  }, [activeLevel, currentLevel]);
+
+  const scroll0 = useSharedValue(0);
+  const scroll1 = useSharedValue(0);
+  const scroll2 = useSharedValue(0);
+  const scrollOffsets = useMemo(
+    () => [scroll0, scroll1, scroll2],
+    [scroll0, scroll1, scroll2],
+  );
+  const ref0 = useAnimatedRef<Animated.ScrollView>();
+  const ref1 = useAnimatedRef<Animated.ScrollView>();
+  const ref2 = useAnimatedRef<Animated.ScrollView>();
+  const listRefs = useMemo(() => [ref0, ref1, ref2], [ref0, ref1, ref2]);
+
+  const scrollY = useDerivedValue(
+    () => scrollOffsets[currentLevel.value].value,
+  );
+
+  const estimatedItemSizes = useMemo(
+    () =>
+      layouts.map((layout) =>
+        layout.listData.length > 0
+          ? layout.contentHeight / layout.listData.length
+          : 100,
+      ),
     [layouts],
   );
 
@@ -41,14 +79,17 @@ export default function GooglePhotosScreen() {
   );
   const onClosed = useCallback(() => setFullScreenPhotoId(null), []);
 
+  const onZoomStart = useCallback(() => setZooming(true), []);
+  const onZoomEnd = useCallback(() => setZooming(false), []);
+  const onCommitLevel = useCallback(
+    (target: number) => setActiveLevel(target),
+    [],
+  );
+
   const {
     gridGesture,
-    scrollY,
-    currentLevel,
     targetLevel,
     progress,
-    pinchActive,
-    targetOffset,
     fsProgress,
     fsOpen,
     fsRectX,
@@ -58,7 +99,13 @@ export default function GooglePhotosScreen() {
   } = useGooglePhotosGrid({
     layouts,
     viewportHeight,
+    scrollY,
+    currentLevel,
+    listRefs,
     onOpenPhoto: setFullScreenPhotoId,
+    onCommitLevel,
+    onZoomStart,
+    onZoomEnd,
   });
 
   return (
@@ -66,18 +113,18 @@ export default function GooglePhotosScreen() {
       <GestureDetector gesture={gridGesture}>
         <View style={styles.viewport}>
           {layouts.map((layout, level) => (
-            <GridLayer
+            <GridList
               key={layout.columnCount}
               layout={layout}
               level={level}
-              viewportHeight={viewportHeight}
-              contentHeights={contentHeights}
-              scrollY={scrollY}
               currentLevel={currentLevel}
               targetLevel={targetLevel}
               progress={progress}
-              pinchActive={pinchActive}
-              targetOffset={targetOffset}
+              active={level === activeLevel}
+              scrollEnabled={level === activeLevel && !zooming}
+              scrollOffset={scrollOffsets[level]}
+              listScrollRef={listRefs[level]}
+              estimatedItemSize={estimatedItemSizes[level]}
             />
           ))}
         </View>
@@ -87,6 +134,7 @@ export default function GooglePhotosScreen() {
         viewportHeight={viewportHeight}
         scrollY={scrollY}
         currentLevel={currentLevel}
+        listRefs={listRefs}
       />
       <View
         style={StyleSheet.absoluteFill}
