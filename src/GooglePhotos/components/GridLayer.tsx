@@ -1,5 +1,6 @@
 import { memo, useCallback, useEffect, useState } from 'react';
-import { Image, StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
+import { Image } from 'expo-image';
 import Animated, {
   SharedValue,
   interpolate,
@@ -124,6 +125,7 @@ const GridLayer = ({
           <Image
             key={item.id}
             source={{ uri: item.uri }}
+            recyclingKey={item.id}
             style={{
               position: 'absolute',
               left: item.x,
@@ -132,7 +134,8 @@ const GridLayer = ({
               height: item.h,
               backgroundColor: PLACEHOLDER_COLOR,
             }}
-            resizeMode="cover"
+            contentFit="cover"
+            transition={200}
           />
         ))}
       </Animated.View>

@@ -103,7 +103,11 @@ export const useGooglePhotosGrid = ({
         cancelAnimation(scrollY);
         cancelAnimation(progress);
         const layout = layouts[currentLevel.value];
-        const item = findItemAtPoint(layout, e.focalX, scrollY.value + e.focalY);
+        const item = findItemAtPoint(
+          layout,
+          e.focalX,
+          scrollY.value + e.focalY,
+        );
         anchorId.value = item.id;
         anchorViewportY.value = item.y + item.h / 2 - scrollY.value;
         resolvedDirection.value = 0;
@@ -210,7 +214,7 @@ export const useGooglePhotosGrid = ({
       fsProgress.value = withTiming(1, { duration: 260 });
     });
 
-    return Gesture.Simultaneous(pinch, pan, tap);
+    return Gesture.Simultaneous(pinch, pan);
   }, [
     layouts,
     viewportHeight,

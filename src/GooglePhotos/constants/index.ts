@@ -79,19 +79,17 @@ let photoCounter = 0;
 export const PHOTOS: Photo[] = MONTHS.flatMap((month) => {
   const count = 8 + Math.floor(random() * 10);
   return Array.from({ length: count }, () => {
-    const seed = photoCounter++;
-    const id = `photo-${seed}`;
+    const id = `photo-${photoCounter++}`;
     const aspectRatio =
       ASPECT_RATIOS[Math.floor(random() * ASPECT_RATIOS.length)];
-    const tag = PHOTO_TAGS[Math.floor(random() * PHOTO_TAGS.length)];
-    const uri = (height: number) =>
-      `https://loremflickr.com/${Math.round(
-        height * aspectRatio,
-      )}/${height}/${tag}?lock=${seed}`;
     return {
       id,
-      uri: uri(240),
-      fullUri: uri(900),
+      uri: `https://picsum.photos/seed/${id}/${Math.round(
+        240 * aspectRatio,
+      )}/240`,
+      fullUri: `https://picsum.photos/seed/${id}/${Math.round(
+        900 * aspectRatio,
+      )}/900`,
       aspectRatio,
       monthLabel: month.label,
       fullMonthLabel: month.full,
