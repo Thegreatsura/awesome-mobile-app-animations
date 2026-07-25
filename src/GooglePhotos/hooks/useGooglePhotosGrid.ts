@@ -198,23 +198,26 @@ export const useGooglePhotosGrid = ({
         }
       });
 
-    const tap = Gesture.Tap().onEnd((e, success) => {
-      if (!success || pinchActive.value || fsOpen.value) {
-        return;
-      }
-      cancelAnimation(scrollY);
-      const layout = layouts[currentLevel.value];
-      const item = findItemAtPoint(layout, e.x, scrollY.value + e.y);
-      fsRectX.value = item.x;
-      fsRectY.value = item.y - scrollY.value;
-      fsRectW.value = item.w;
-      fsRectH.value = item.h;
-      runOnJS(onOpenPhoto)(item.id);
-      fsOpen.value = true;
-      fsProgress.value = withTiming(1, { duration: 260 });
-    });
+    const tap = Gesture.Tap()
+      .maxDuration(250)
+      .maxDistance(10)
+      .onEnd((e, success) => {
+        if (!success || pinchActive.value || fsOpen.value) {
+          return;
+        }
+        cancelAnimation(scrollY);
+        const layout = layouts[currentLevel.value];
+        const item = findItemAtPoint(layout, e.x, scrollY.value + e.y);
+        fsRectX.value = item.x;
+        fsRectY.value = item.y - scrollY.value;
+        fsRectW.value = item.w;
+        fsRectH.value = item.h;
+        runOnJS(onOpenPhoto)(item.id);
+        fsOpen.value = true;
+        fsProgress.value = withTiming(1, { duration: 260 });
+      });
 
-    return Gesture.Simultaneous(pinch, pan);
+    return Gesture.Simultaneous(pinch, pan, tap);
   }, [
     layouts,
     viewportHeight,
