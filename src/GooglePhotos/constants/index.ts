@@ -10,6 +10,9 @@ export const GRID_BOTTOM_PADDING = 120;
 export const PINCH_COMMIT_THRESHOLD = 0.35;
 export const FULLSCREEN_COMMIT_THRESHOLD = 0.3;
 
+export const PINCH_ZOOM_IN_THROW = 1.5;
+export const PINCH_ZOOM_OUT_THROW = 0.75;
+
 export const SCROLL_TAB_THUMB_HEIGHT = 48;
 export const SCROLL_TAB_TOP_INSET = 100;
 export const SCROLL_TAB_BOTTOM_INSET = 40;
@@ -28,39 +31,6 @@ const MONTHS = [
 ];
 
 const ASPECT_RATIOS = [0.75, 0.8, 1, 1, 1.25, 1.33, 1.5, 1.77];
-
-const PHOTO_TAGS = [
-  'portrait',
-  'selfie',
-  'friends',
-  'family',
-  'baby',
-  'dog',
-  'puppy',
-  'cat',
-  'kitten',
-  'food',
-  'breakfast',
-  'coffee',
-  'dessert',
-  'pizza',
-  'beach',
-  'sunset',
-  'mountains',
-  'hiking',
-  'travel',
-  'cityscape',
-  'wedding',
-  'party',
-  'birthday',
-  'flowers',
-  'garden',
-  'roadtrip',
-  'architecture',
-  'street',
-  'autumn',
-  'snow',
-];
 
 const mulberry32 = (seed: number) => {
   let t = seed;
