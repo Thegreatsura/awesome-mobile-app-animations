@@ -6,6 +6,7 @@ import {
 import {
   LayoutItem,
   LayoutRow,
+  ListEntry,
   MonthHeader,
   Photo,
   ZoomLayout,
@@ -22,6 +23,7 @@ export const computeJustifiedLayout = (
   const items: LayoutItem[] = [];
   const rows: LayoutRow[] = [];
   const headers: MonthHeader[] = [];
+  const listData: ListEntry[] = [];
   const itemById: Record<string, LayoutItem> = {};
 
   let y = 0;
@@ -54,12 +56,20 @@ export const computeJustifiedLayout = (
       itemById[photo.id] = item;
       x += item.w + GRID_GAP;
     });
+    const endIndex = items.length - 1;
     rows.push({
       y,
       h: rowHeight,
       startIndex,
-      endIndex: items.length - 1,
+      endIndex,
       label: rowBuffer[0].monthLabel,
+    });
+    listData.push({
+      kind: 'row',
+      key: `r:${items[startIndex].id}`,
+      height: rowHeight + GRID_GAP,
+      startIndex,
+      endIndex,
     });
     y += rowHeight + GRID_GAP;
     rowBuffer = [];
@@ -70,6 +80,12 @@ export const computeJustifiedLayout = (
       flushRow(false);
       currentMonth = photo.fullMonthLabel;
       headers.push({ y, label: photo.fullMonthLabel });
+      listData.push({
+        kind: 'header',
+        key: `h:${photo.fullMonthLabel}`,
+        label: photo.fullMonthLabel,
+        height: MONTH_HEADER_HEIGHT,
+      });
       y += MONTH_HEADER_HEIGHT;
     }
     rowBuffer.push(photo);
@@ -86,6 +102,7 @@ export const computeJustifiedLayout = (
     items,
     rows,
     headers,
+    listData,
     contentHeight: y + GRID_BOTTOM_PADDING,
     itemById,
   };
