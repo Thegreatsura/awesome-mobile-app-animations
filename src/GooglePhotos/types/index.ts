@@ -1,3 +1,5 @@
+import type { ImageStyle } from 'react-native';
+
 export interface Photo {
   id: string;
   uri: string;
@@ -15,6 +17,7 @@ export interface LayoutItem {
   y: number;
   w: number;
   h: number;
+  style: ImageStyle;
 }
 
 export interface LayoutRow {
@@ -38,6 +41,7 @@ export type ListEntry =
       height: number;
       startIndex: number;
       endIndex: number;
+      items: LayoutItem[];
     };
 
 export interface ZoomLayout {

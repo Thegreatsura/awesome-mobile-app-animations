@@ -2,6 +2,7 @@ import {
   GRID_BOTTOM_PADDING,
   GRID_GAP,
   MONTH_HEADER_HEIGHT,
+  PLACEHOLDER_COLOR,
 } from '../constants';
 import {
   LayoutItem,
@@ -42,17 +43,28 @@ export const computeJustifiedLayout = (
 
     let x = 0;
     const startIndex = items.length;
+    const rowItems: LayoutItem[] = [];
     rowBuffer.forEach((photo) => {
+      const w = rowHeight * photo.aspectRatio;
       const item: LayoutItem = {
         id: photo.id,
         uri: photo.uri,
         fullUri: photo.fullUri,
         x,
         y,
-        w: rowHeight * photo.aspectRatio,
+        w,
         h: rowHeight,
+        style: {
+          position: 'absolute',
+          left: x,
+          top: 0,
+          width: w,
+          height: rowHeight,
+          backgroundColor: PLACEHOLDER_COLOR,
+        },
       };
       items.push(item);
+      rowItems.push(item);
       itemById[photo.id] = item;
       x += item.w + GRID_GAP;
     });
@@ -70,6 +82,7 @@ export const computeJustifiedLayout = (
       height: rowHeight + GRID_GAP,
       startIndex,
       endIndex,
+      items: rowItems,
     });
     y += rowHeight + GRID_GAP;
     rowBuffer = [];
