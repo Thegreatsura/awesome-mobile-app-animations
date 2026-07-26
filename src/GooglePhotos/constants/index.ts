@@ -19,18 +19,34 @@ export const SCROLL_TAB_THUMB_HEIGHT = 48;
 export const SCROLL_TAB_TOP_INSET = 100;
 export const SCROLL_TAB_BOTTOM_INSET = 40;
 
-const MONTHS = [
-  { label: 'Jul 2026', full: 'July 2026' },
-  { label: 'Jun 2026', full: 'June 2026' },
-  { label: 'May 2026', full: 'May 2026' },
-  { label: 'Apr 2026', full: 'April 2026' },
-  { label: 'Mar 2026', full: 'March 2026' },
-  { label: 'Feb 2026', full: 'February 2026' },
-  { label: 'Jan 2026', full: 'January 2026' },
-  { label: 'Dec 2025', full: 'December 2025' },
-  { label: 'Nov 2025', full: 'November 2025' },
-  { label: 'Oct 2025', full: 'October 2025' },
+const MONTH_NAMES = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ];
+
+const MONTH_COUNT = 40;
+const START_YEAR = 2026;
+const START_MONTH_INDEX = 6;
+
+const MONTHS = Array.from({ length: MONTH_COUNT }, (_, i) => {
+  const monthsBack = i;
+  const totalMonth = START_YEAR * 12 + START_MONTH_INDEX - monthsBack;
+  const year = Math.floor(totalMonth / 12);
+  const monthIndex = totalMonth % 12;
+  const full = `${MONTH_NAMES[monthIndex]} ${year}`;
+  const label = `${MONTH_NAMES[monthIndex].slice(0, 3)} ${year}`;
+  return { label, full };
+});
 
 const ASPECT_RATIOS = [0.75, 0.8, 1, 1, 1.25, 1.33, 1.5, 1.77];
 
@@ -49,7 +65,7 @@ const random = mulberry32(20260723);
 
 let photoCounter = 0;
 export const PHOTOS: Photo[] = MONTHS.flatMap((month) => {
-  const count = 8 + Math.floor(random() * 10);
+  const count = 30 + Math.floor(random() * 20);
   return Array.from({ length: count }, () => {
     const id = `photo-${photoCounter++}`;
     const aspectRatio =
