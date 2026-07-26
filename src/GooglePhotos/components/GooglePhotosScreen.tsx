@@ -26,7 +26,8 @@ import FullScreenPhoto from './FullScreenPhoto';
 import GridList from './GridList';
 import ScrollTab from './ScrollTab';
 
-const FULLSCREEN_PREFETCH_COUNT = 30;
+const FULLSCREEN_PREFETCH_COUNT = 10;
+const FULLSCREEN_PREFETCH_DELAY_MS = 3000;
 
 if (COLUMN_COUNTS.length !== 3) {
   throw new Error('GooglePhotosScreen expects exactly 3 zoom levels');
@@ -51,6 +52,8 @@ export default function GooglePhotosScreen() {
     ),
   );
 
+  const [warmedUp, setWarmedUp] = useState(false);
+
   const isFirstLayoutRef = useRef(true);
   useEffect(() => {
     if (isFirstLayoutRef.current) {
@@ -73,23 +76,31 @@ export default function GooglePhotosScreen() {
             computeJustifiedLayout(PHOTOS, width, COLUMN_COUNTS[level]),
         ),
       );
+      setWarmedUp(true);
     });
     return () => task.cancel();
   }, [width]);
 
   useEffect(() => {
+    let timeout: ReturnType<typeof setTimeout> | null = null;
     const task = InteractionManager.runAfterInteractions(() => {
-      Image.prefetch(
-        PHOTOS.slice(0, FULLSCREEN_PREFETCH_COUNT).map(
-          (photo) => photo.fullUri,
-        ),
-        { cachePolicy: 'disk' },
-      );
+      timeout = setTimeout(() => {
+        Image.prefetch(
+          PHOTOS.slice(0, FULLSCREEN_PREFETCH_COUNT).map(
+            (photo) => photo.fullUri,
+          ),
+          { cachePolicy: 'disk' },
+        );
+      }, FULLSCREEN_PREFETCH_DELAY_MS);
     });
-    return () => task.cancel();
+    return () => {
+      task.cancel();
+      if (timeout !== null) {
+        clearTimeout(timeout);
+      }
+    };
   }, []);
 
-  const [zooming, setZooming] = useState(false);
   const currentLevel = useSharedValue(INITIAL_ZOOM_INDEX);
   useEffect(() => {
     currentLevel.value = activeLevel;
@@ -124,14 +135,17 @@ export default function GooglePhotosScreen() {
   const [fullScreenPhotoId, setFullScreenPhotoId] = useState<string | null>(
     null,
   );
+  const [openSignal, setOpenSignal] = useState(0);
+  const onOpenPhoto = useCallback((photoId: string) => {
+    setFullScreenPhotoId(photoId);
+    setOpenSignal((n) => n + 1);
+  }, []);
   const fullScreenPhoto = useMemo(
     () => PHOTOS.find((photo) => photo.id === fullScreenPhotoId) ?? null,
     [fullScreenPhotoId],
   );
   const onClosed = useCallback(() => setFullScreenPhotoId(null), []);
 
-  const onZoomStart = useCallback(() => setZooming(true), []);
-  const onZoomEnd = useCallback(() => setZooming(false), []);
   const onCommitLevel = useCallback(
     (target: number) => setActiveLevel(target),
     [],
@@ -154,11 +168,9 @@ export default function GooglePhotosScreen() {
     scrollY,
     currentLevel,
     listRefs,
-    onOpenPhoto: setFullScreenPhotoId,
+    onOpenPhoto,
     onClosePhoto: onClosed,
     onCommitLevel,
-    onZoomStart,
-    onZoomEnd,
   });
 
   return (
@@ -166,24 +178,28 @@ export default function GooglePhotosScreen() {
       <View style={styles.container} onLayout={onViewportLayout}>
         <GestureDetector gesture={gridGesture}>
           <View style={styles.viewport}>
-            {layouts.map((layout, level) => (
-              <GridList
-                key={COLUMN_COUNTS[level]}
-                layout={layout}
-                level={level}
-                currentLevel={currentLevel}
-                targetLevel={targetLevel}
-                progress={progress}
-                active={level === activeLevel}
-                scrollEnabled={level === activeLevel && !zooming}
-                scrollOffset={scrollOffsets[level]}
-                listScrollRef={listRefs[level]}
-                estimatedItemSize={estimatedItemSizes[level]}
-                drawDistance={
-                  level === activeLevel ? viewportHeight : viewportHeight * 0.5
-                }
-              />
-            ))}
+            {layouts.map((layout, level) =>
+              layout === null ? null : (
+                <GridList
+                  key={COLUMN_COUNTS[level]}
+                  layout={layout}
+                  level={level}
+                  currentLevel={currentLevel}
+                  targetLevel={targetLevel}
+                  progress={progress}
+                  active={level === activeLevel}
+                  scrollEnabled={level === activeLevel}
+                  scrollOffset={scrollOffsets[level]}
+                  listScrollRef={listRefs[level]}
+                  estimatedItemSize={estimatedItemSizes[level]}
+                  drawDistance={
+                    level === activeLevel
+                      ? viewportHeight
+                      : viewportHeight * 0.25
+                  }
+                />
+              ),
+            )}
           </View>
         </GestureDetector>
         <ScrollTab
@@ -199,17 +215,21 @@ export default function GooglePhotosScreen() {
         style={StyleSheet.absoluteFill}
         pointerEvents={fullScreenPhoto ? 'auto' : 'none'}
       >
-        <FullScreenPhoto
-          photo={fullScreenPhoto}
-          fsProgress={fsProgress}
-          fsOpen={fsOpen}
-          fsRectX={fsRectX}
-          fsRectY={fsRectY}
-          fsRectW={fsRectW}
-          fsRectH={fsRectH}
-          viewportHeight={viewportHeight}
-          onClosed={onClosed}
-        />
+        {warmedUp || fullScreenPhoto ? (
+          <FullScreenPhoto
+            photo={fullScreenPhoto}
+            openSignal={openSignal}
+            pinchActive={pinchActive}
+            fsProgress={fsProgress}
+            fsOpen={fsOpen}
+            fsRectX={fsRectX}
+            fsRectY={fsRectY}
+            fsRectW={fsRectW}
+            fsRectH={fsRectH}
+            viewportHeight={viewportHeight}
+            onClosed={onClosed}
+          />
+        ) : null}
       </View>
     </View>
   );
