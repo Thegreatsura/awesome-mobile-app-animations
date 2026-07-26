@@ -11,6 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Photo } from '../types';
 import { clampValue } from '../utils';
+import { FULLSCREEN_DISMISS_THRESHOLD } from '../constants';
 
 const FullScreenPhoto = ({
   photo,
@@ -83,7 +84,7 @@ const FullScreenPhoto = ({
       if (!fsOpen.value) {
         return;
       }
-      if (fsProgress.value < 0.7) {
+      if (fsProgress.value < FULLSCREEN_DISMISS_THRESHOLD) {
         fsOpen.value = false;
         fsProgress.value = withTiming(0, { duration: 220 }, (finished) => {
           if (finished) {
@@ -104,19 +105,23 @@ const FullScreenPhoto = ({
       dragX.value = e.translationX;
       dragY.value = e.translationY;
       const drop = clampValue(
-        Math.abs(e.translationY) / (viewportHeight * 0.5),
+        Math.abs(e.translationY) / (viewportHeight / 6),
         0,
         1,
       );
-      fsProgress.value = 1 - 5 * drop;
+      // Slight buffer for final animation
+      fsProgress.value = Math.max(0.01, 1 - drop);
     })
     .onEnd((e) => {
       if (!fsOpen.value) {
         return;
       }
-      const dismiss =
-        Math.abs(e.translationY) > 120 || Math.abs(e.velocityY) > 800;
-      if (dismiss) {
+      const shouldDismiss =
+        Math.abs(e.translationY) > 120 ||
+        Math.abs(e.velocityY) > 800 ||
+        fsProgress.value < FULLSCREEN_DISMISS_THRESHOLD;
+
+      if (shouldDismiss) {
         fsOpen.value = false;
         dragX.value = withTiming(0, { duration: 220 });
         dragY.value = withTiming(0, { duration: 220 });

@@ -10,6 +10,7 @@ export const GRID_TOP_INSET = 80;
 
 export const PINCH_COMMIT_THRESHOLD = 0.35;
 export const FULLSCREEN_COMMIT_THRESHOLD = 0.3;
+export const FULLSCREEN_DISMISS_THRESHOLD = 0.7;
 
 export const PINCH_ZOOM_IN_THROW = 1.5;
 export const PINCH_ZOOM_OUT_THROW = 0.75;
