@@ -1,6 +1,7 @@
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Stack } from 'expo-router';
 import { Image, StyleSheet, Text, View } from 'react-native';
+import GooglePhotosLogo from '../GooglePhotos/components/GooglePhotosLogo';
 
 export default function RootLayout() {
   return (
@@ -113,6 +114,23 @@ export default function RootLayout() {
             contentStyle: { padding: 0 },
           }}
         />
+        <Stack.Screen
+          name="google-photos"
+          options={{
+            title: 'Google Photos',
+            headerTitle() {
+              return (
+                <View style={[styles.header]}>
+                  <View style={styles.googlePhotosLogoContainer}>
+                    <GooglePhotosLogo size={18} />
+                  </View>
+                  <Text style={styles.headerTitle}>Google Photos</Text>
+                </View>
+              );
+            },
+            contentStyle: { padding: 0 },
+          }}
+        />
       </Stack>
     </GestureHandlerRootView>
   );
@@ -136,8 +154,17 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: 'white',
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: 'bold',
+  },
+  googlePhotosLogoContainer: {
+    width: 28,
+    height: 28,
+    marginRight: 8,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   chatgptLogoContainer: {
     width: 36,

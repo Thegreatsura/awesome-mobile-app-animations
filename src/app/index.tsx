@@ -1,6 +1,7 @@
 import { StyleSheet, View, Text, Pressable, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import GooglePhotosLogo from '../GooglePhotos/components/GooglePhotosLogo';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -9,6 +10,15 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Awesome Mobile App Animations</Text>
       <View style={styles.buttonsContainer}>
+        <Pressable
+          style={styles.button}
+          onPress={() => router.push('/google-photos')}
+        >
+          <View style={styles.googlePhotosIcon}>
+            <GooglePhotosLogo size={26} />
+          </View>
+          <Text style={styles.buttonText}>Google Photos: Grid List</Text>
+        </Pressable>
         <Pressable
           style={styles.button}
           onPress={() => router.push('/chatgpt-voice-profiles')}
@@ -153,6 +163,15 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
     fontWeight: '700',
+  },
+  googlePhotosIcon: {
+    width: 40,
+    height: 40,
+    marginRight: 10,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   chatgptIcon: {
     width: 40,
