@@ -98,8 +98,14 @@ const FullScreenPhoto = ({
         <Animated.View style={[styles.backdrop, backdropStyle]} />
         <Animated.View style={[styles.photoContainer, photoStyle]}>
           <Image
+            source={{ uri: photo.uri }}
+            style={StyleSheet.absoluteFill}
+            contentFit="contain"
+            cachePolicy="memory-disk"
+          />
+          <Image
             source={{ uri: photo.fullUri }}
-            style={styles.photo}
+            style={StyleSheet.absoluteFill}
             contentFit="contain"
             transition={200}
           />
@@ -118,10 +124,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     overflow: 'hidden',
     backgroundColor: '#2f2f2f',
-  },
-  photo: {
-    width: '100%',
-    height: '100%',
   },
 });
 

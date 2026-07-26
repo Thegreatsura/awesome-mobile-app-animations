@@ -13,7 +13,12 @@ import Animated, {
   useDerivedValue,
   useSharedValue,
 } from 'react-native-reanimated';
-import { COLUMN_COUNTS, INITIAL_ZOOM_INDEX, PHOTOS } from '../constants';
+import {
+  COLUMN_COUNTS,
+  GRID_TOP_INSET,
+  INITIAL_ZOOM_INDEX,
+  PHOTOS,
+} from '../constants';
 import { useGooglePhotosGrid } from '../hooks/useGooglePhotosGrid';
 import { computeJustifiedLayout } from '../utils';
 import { ZoomLayout } from '../types';
@@ -153,10 +158,11 @@ export default function GooglePhotosScreen() {
   });
 
   return (
-    <View style={styles.container} onLayout={onViewportLayout}>
-      <GestureDetector gesture={gridGesture}>
-        <View style={styles.viewport}>
-          {layouts.map((layout, level) => (
+    <View style={styles.root}>
+      <View style={styles.container} onLayout={onViewportLayout}>
+        <GestureDetector gesture={gridGesture}>
+          <View style={styles.viewport}>
+            {layouts.map((layout, level) => (
             <GridList
               key={COLUMN_COUNTS[level]}
               layout={layout}
@@ -183,6 +189,7 @@ export default function GooglePhotosScreen() {
         currentLevel={currentLevel}
         listRefs={listRefs}
       />
+      </View>
       <View
         style={StyleSheet.absoluteFill}
         pointerEvents={fullScreenPhoto ? 'auto' : 'none'}
@@ -204,11 +211,14 @@ export default function GooglePhotosScreen() {
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: '#1c1c1c',
+  },
   container: {
     flex: 1,
     width: '100%',
-    backgroundColor: '#1c1c1c',
-    paddingTop: 80,
+    paddingTop: GRID_TOP_INSET,
   },
   viewport: {
     flex: 1,
