@@ -1,4 +1,4 @@
-import { memo, useCallback } from 'react';
+import { memo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import Animated, {
@@ -9,51 +9,33 @@ import Animated, {
 import { AnimatedLegendList } from '@legendapp/list/reanimated';
 import type { LegendListRenderItemProps } from '@legendapp/list/react-native';
 import { GRID_BOTTOM_PADDING } from '../constants';
-import { LayoutItem, ListEntry, ZoomLayout } from '../types';
-
-const PLACEHOLDER_COLOR = '#2f2f2f';
-
-const EMPTY_LIST_DATA: ListEntry[] = [];
-const EMPTY_ITEMS: LayoutItem[] = [];
+import { ListEntry, ZoomLayout } from '../types';
 
 const keyExtractor = (item: ListEntry) => item.key;
 const getItemType = (item: ListEntry) => item.kind;
 const getFixedItemSize = (item: ListEntry) => item.height;
 
-const RowCell = memo(
-  ({ entry, items }: { entry: ListEntry; items: LayoutItem[] }) => {
-    if (entry.kind !== 'row') {
-      return null;
-    }
-    const rowItems: LayoutItem[] = [];
-    for (let i = entry.startIndex; i <= entry.endIndex; i++) {
-      rowItems.push(items[i]);
-    }
-    return (
-      <View style={{ height: entry.height }}>
-        {rowItems.map((item) => (
-          <Image
-            key={item.id}
-            source={{ uri: item.uri }}
-            recyclingKey={item.id}
-            style={{
-              position: 'absolute',
-              left: item.x,
-              top: 0,
-              width: item.w,
-              height: item.h,
-              backgroundColor: PLACEHOLDER_COLOR,
-            }}
-            contentFit="cover"
-            cachePolicy="memory-disk"
-            allowDownscaling
-            transition={200}
-          />
-        ))}
-      </View>
-    );
-  },
-);
+const RowCell = memo(({ entry }: { entry: ListEntry }) => {
+  if (entry.kind !== 'row') {
+    return null;
+  }
+  return (
+    <View style={{ height: entry.height }}>
+      {entry.items.map((item) => (
+        <Image
+          key={item.id}
+          source={{ uri: item.uri }}
+          recyclingKey={item.id}
+          style={item.style}
+          contentFit="cover"
+          cachePolicy="memory-disk"
+          allowDownscaling
+          transition={200}
+        />
+      ))}
+    </View>
+  );
+});
 RowCell.displayName = 'RowCell';
 
 const HeaderCell = memo(({ entry }: { entry: ListEntry }) => {
@@ -68,6 +50,9 @@ const HeaderCell = memo(({ entry }: { entry: ListEntry }) => {
 });
 HeaderCell.displayName = 'HeaderCell';
 
+const renderItem = ({ item }: LegendListRenderItemProps<ListEntry>) =>
+  item.kind === 'header' ? <HeaderCell entry={item} /> : <RowCell entry={item} />;
+
 const GridList = ({
   layout,
   level,
@@ -81,7 +66,7 @@ const GridList = ({
   estimatedItemSize,
   drawDistance,
 }: {
-  layout: ZoomLayout | null;
+  layout: ZoomLayout;
   level: number;
   currentLevel: SharedValue<number>;
   targetLevel: SharedValue<number>;
@@ -109,17 +94,6 @@ const GridList = ({
     return { opacity, transform: [{ scale }] };
   });
 
-  const items = layout?.items ?? EMPTY_ITEMS;
-  const renderItem = useCallback(
-    ({ item }: LegendListRenderItemProps<ListEntry>) =>
-      item.kind === 'header' ? (
-        <HeaderCell entry={item} />
-      ) : (
-        <RowCell entry={item} items={items} />
-      ),
-    [items],
-  );
-
   return (
     <Animated.View
       style={[StyleSheet.absoluteFill, wrapperStyle]}
@@ -128,8 +102,7 @@ const GridList = ({
       <AnimatedLegendList
         refScrollView={listScrollRef}
         sharedValues={{ scrollOffset }}
-        data={layout?.listData ?? EMPTY_LIST_DATA}
-        extraData={layout}
+        data={layout.listData}
         keyExtractor={keyExtractor}
         getItemType={getItemType}
         getFixedItemSize={getFixedItemSize}
