@@ -9,6 +9,7 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withDelay,
+  withSequence,
   withTiming,
 } from 'react-native-reanimated';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
@@ -16,6 +17,7 @@ import { faSort } from '@fortawesome/free-solid-svg-icons';
 import {
   SCROLL_TAB_BOTTOM_INSET,
   SCROLL_TAB_THUMB_HEIGHT,
+  SCROLL_TAB_THUMB_WIDTH,
   SCROLL_TAB_TOP_INSET,
 } from '../constants';
 import { ZoomLayout } from '../types';
@@ -29,12 +31,14 @@ const ScrollTab = ({
   scrollY,
   currentLevel,
   listRefs,
+  pinchActive,
 }: {
   layouts: (ZoomLayout | null)[];
   viewportHeight: number;
   scrollY: SharedValue<number>;
   currentLevel: SharedValue<number>;
   listRefs: AnimatedRef<Animated.ScrollView>[];
+  pinchActive: SharedValue<boolean>;
 }) => {
   const trackHeight = Math.max(
     1,
@@ -52,7 +56,43 @@ const ScrollTab = ({
 
   const isDragging = useSharedValue(false);
   const thumbOpacity = useSharedValue(0);
+  const thumbTranslateX = useSharedValue(SCROLL_TAB_THUMB_WIDTH);
   const lastFadeScheduledAt = useSharedValue(-1e9);
+
+  const showThumb = () => {
+    'worklet';
+    thumbOpacity.value = withTiming(1, { duration: 150 });
+    thumbTranslateX.value = withTiming(0, { duration: 150 });
+  };
+
+  const scheduleHideThumb = () => {
+    'worklet';
+    thumbOpacity.value = withDelay(1200, withTiming(0, { duration: 400 }));
+    thumbTranslateX.value = withDelay(
+      1200,
+      withTiming(SCROLL_TAB_THUMB_WIDTH, { duration: 400 }),
+    );
+  };
+
+  const showThumbAndScheduleHide = () => {
+    'worklet';
+    thumbOpacity.value = withSequence(
+      withTiming(1, { duration: 150 }),
+      withDelay(1200, withTiming(0, { duration: 400 })),
+    );
+    thumbTranslateX.value = withSequence(
+      withTiming(0, { duration: 150 }),
+      withDelay(1200, withTiming(SCROLL_TAB_THUMB_WIDTH, { duration: 400 })),
+    );
+  };
+
+  const hideThumb = () => {
+    'worklet';
+    thumbOpacity.value = withTiming(0, { duration: 200 });
+    thumbTranslateX.value = withTiming(SCROLL_TAB_THUMB_WIDTH, {
+      duration: 200,
+    });
+  };
 
   useAnimatedReaction(
     () => scrollY.value,
@@ -60,10 +100,21 @@ const ScrollTab = ({
       if (previous === null || value === previous) {
         return;
       }
+      if (pinchActive.value) {
+        return;
+      }
       if (Math.abs(value - lastFadeScheduledAt.value) > 8) {
         lastFadeScheduledAt.value = value;
-        thumbOpacity.value = 1;
-        thumbOpacity.value = withDelay(1200, withTiming(0, { duration: 400 }));
+        showThumbAndScheduleHide();
+      }
+    },
+  );
+
+  useAnimatedReaction(
+    () => pinchActive.value,
+    (active, previous) => {
+      if (active && !previous) {
+        hideThumb();
       }
     },
   );
@@ -72,7 +123,7 @@ const ScrollTab = ({
     .hitSlop({ left: 20, right: 8, top: 10, bottom: 10 })
     .onStart(() => {
       isDragging.value = true;
-      thumbOpacity.value = 1;
+      showThumb();
     })
     .onChange((e) => {
       const maxScroll = maxScrollFor(currentLevel.value);
@@ -85,7 +136,7 @@ const ScrollTab = ({
     })
     .onEnd(() => {
       isDragging.value = false;
-      thumbOpacity.value = withDelay(1200, withTiming(0, { duration: 400 }));
+      scheduleHideThumb();
     });
 
   const thumbStyle = useAnimatedStyle(() => {
@@ -93,7 +144,10 @@ const ScrollTab = ({
     const ratio = maxScroll > 0 ? scrollY.value / maxScroll : 0;
     return {
       opacity: maxScroll > 0 ? thumbOpacity.value : 0,
-      transform: [{ translateY: ratio * trackHeight }],
+      transform: [
+        { translateY: ratio * trackHeight },
+        { translateX: thumbTranslateX.value },
+      ],
     };
   });
 
@@ -135,7 +189,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 6,
     top: SCROLL_TAB_TOP_INSET,
-    width: 36,
+    width: SCROLL_TAB_THUMB_WIDTH,
     height: SCROLL_TAB_THUMB_HEIGHT,
     borderRadius: SCROLL_TAB_THUMB_HEIGHT / 2,
     backgroundColor: 'white',

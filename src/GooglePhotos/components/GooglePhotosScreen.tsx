@@ -141,6 +141,7 @@ export default function GooglePhotosScreen() {
     gridGesture,
     targetLevel,
     progress,
+    pinchActive,
     fsProgress,
     fsOpen,
     fsRectX,
@@ -191,6 +192,7 @@ export default function GooglePhotosScreen() {
           scrollY={scrollY}
           currentLevel={currentLevel}
           listRefs={listRefs}
+          pinchActive={pinchActive}
         />
       </View>
       <View

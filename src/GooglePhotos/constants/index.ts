@@ -16,6 +16,7 @@ export const PINCH_ZOOM_IN_THROW = 1.5;
 export const PINCH_ZOOM_OUT_THROW = 0.75;
 
 export const SCROLL_TAB_THUMB_HEIGHT = 48;
+export const SCROLL_TAB_THUMB_WIDTH = 36;
 export const SCROLL_TAB_TOP_INSET = 100;
 export const SCROLL_TAB_BOTTOM_INSET = 40;
 
