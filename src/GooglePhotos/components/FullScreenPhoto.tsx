@@ -6,6 +6,7 @@ import Animated, {
   interpolate,
   runOnJS,
   useAnimatedStyle,
+  useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
 import { Photo } from '../types';
@@ -34,8 +35,11 @@ const FullScreenPhoto = ({
 }) => {
   const { width: viewportWidth } = useWindowDimensions();
 
+  const dragX = useSharedValue(0);
+  const dragY = useSharedValue(0);
+
   const backdropStyle = useAnimatedStyle(() => ({
-    opacity: Math.min(1, (1 / 0.75) * fsProgress.value),
+    opacity: Math.min(1, 2 * fsProgress.value),
   }));
 
   const photoStyle = useAnimatedStyle(() => ({
@@ -51,19 +55,22 @@ const FullScreenPhoto = ({
       [0, 1],
       [fsRectH.value, viewportHeight],
     ),
+    transform: [{ translateX: dragX.value }, { translateY: dragY.value }],
   }));
 
-  const close = Gesture.Tap().onEnd((_e, success) => {
-    if (!success || !fsOpen.value) {
-      return;
-    }
-    fsOpen.value = false;
-    fsProgress.value = withTiming(0, { duration: 220 }, (finished) => {
-      if (finished) {
-        runOnJS(onClosed)();
+  const close = Gesture.Tap()
+    .maxDistance(10)
+    .onEnd((_e, success) => {
+      if (!success || !fsOpen.value) {
+        return;
       }
+      fsOpen.value = false;
+      fsProgress.value = withTiming(0, { duration: 220 }, (finished) => {
+        if (finished) {
+          runOnJS(onClosed)();
+        }
+      });
     });
-  });
 
   const pinchOut = Gesture.Pinch()
     .onUpdate((e) => {
@@ -88,12 +95,49 @@ const FullScreenPhoto = ({
       }
     });
 
+  const pan = Gesture.Pan()
+    .maxPointers(1)
+    .onUpdate((e) => {
+      if (!fsOpen.value) {
+        return;
+      }
+      dragX.value = e.translationX;
+      dragY.value = e.translationY;
+      const drop = clampValue(
+        Math.abs(e.translationY) / (viewportHeight * 0.5),
+        0,
+        1,
+      );
+      fsProgress.value = 1 - 5 * drop;
+    })
+    .onEnd((e) => {
+      if (!fsOpen.value) {
+        return;
+      }
+      const dismiss =
+        Math.abs(e.translationY) > 120 || Math.abs(e.velocityY) > 800;
+      if (dismiss) {
+        fsOpen.value = false;
+        dragX.value = withTiming(0, { duration: 220 });
+        dragY.value = withTiming(0, { duration: 220 });
+        fsProgress.value = withTiming(0, { duration: 220 }, (finished) => {
+          if (finished) {
+            runOnJS(onClosed)();
+          }
+        });
+      } else {
+        dragX.value = withTiming(0, { duration: 180 });
+        dragY.value = withTiming(0, { duration: 180 });
+        fsProgress.value = withTiming(1, { duration: 180 });
+      }
+    });
+
   if (!photo) {
     return null;
   }
 
   return (
-    <GestureDetector gesture={Gesture.Simultaneous(pinchOut, close)}>
+    <GestureDetector gesture={Gesture.Simultaneous(pinchOut, pan, close)}>
       <Animated.View style={StyleSheet.absoluteFill}>
         <Animated.View
           style={[styles.backdrop, backdropStyle]}
