@@ -1398,6 +1398,13 @@
     "@jridgewell/resolve-uri" "^3.1.0"
     "@jridgewell/sourcemap-codec" "^1.4.14"
 
+"@legendapp/list@^3.3.3":
+  version "3.3.3"
+  resolved "https://registry.yarnpkg.com/@legendapp/list/-/list-3.3.3.tgz#219531d71d0020a8e521827f072002224df8cfaa"
+  integrity sha512-p3g4xG6f//s4XQKhuus2189GCQgOHEIbJXHePqeDxj+6UQQQyij4YBjyArNSCgqoP0c03sxDPSOuCFB128Ql6g==
+  dependencies:
+    use-sync-external-store "^1.5.0"
+
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"
   resolved "https://registry.npmjs.org/@nodelib/fs.scandir/-/fs.scandir-2.1.5.tgz"
@@ -3015,6 +3022,11 @@ expo-font@~13.0.4:
   integrity sha512-eAP5hyBgC8gafFtprsz0HMaB795qZfgJWqTmU0NfbSin1wUuVySFMEPMOrTkTgmazU73v4Cb4x7p86jY1XXYUw==
   dependencies:
     fontfaceobserver "^2.1.0"
+
+expo-image@~2.0.7:
+  version "2.0.7"
+  resolved "https://registry.yarnpkg.com/expo-image/-/expo-image-2.0.7.tgz#087ca651e3dcd2e92efdda11a6c9e3ad6fddc127"
+  integrity sha512-kv40OIJOkItwznhdqFmKxTMC5O8GkpyTf8ng7Py4Hy6IBiH59dkeP6vUZQhzPhJOm5v1kZK4XldbskBosqzOug==
 
 expo-keep-awake@~14.0.3:
   version "14.0.3"
