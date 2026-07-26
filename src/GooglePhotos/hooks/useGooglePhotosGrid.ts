@@ -6,7 +6,9 @@ import Animated, {
   cancelAnimation,
   runOnJS,
   scrollTo,
+  useAnimatedReaction,
   useSharedValue,
+  withDelay,
   withTiming,
 } from 'react-native-reanimated';
 import {
@@ -29,8 +31,6 @@ export const useGooglePhotosGrid = ({
   onOpenPhoto,
   onClosePhoto,
   onCommitLevel,
-  onZoomStart,
-  onZoomEnd,
 }: {
   layouts: (ZoomLayout | null)[];
   viewportHeight: number;
@@ -40,8 +40,6 @@ export const useGooglePhotosGrid = ({
   onOpenPhoto: (photoId: string) => void;
   onClosePhoto: () => void;
   onCommitLevel: (targetLevel: number) => void;
-  onZoomStart: () => void;
-  onZoomEnd: () => void;
 }) => {
   const targetLevel = useSharedValue(INITIAL_ZOOM_INDEX);
   const progress = useSharedValue(0);
@@ -60,6 +58,54 @@ export const useGooglePhotosGrid = ({
   const fsRectW = useSharedValue(1);
   const fsRectH = useSharedValue(1);
 
+  const syncPulse = useSharedValue(0);
+  useAnimatedReaction(
+    () => scrollY.value,
+    (value, previous) => {
+      if (previous === null || value === previous) {
+        return;
+      }
+      if (pinchActive.value || fsOpen.value) {
+        return;
+      }
+      cancelAnimation(syncPulse);
+      syncPulse.value = 0;
+      syncPulse.value = withDelay(
+        150,
+        withTiming(1, { duration: 16 }, (finished) => {
+          if (!finished || pinchActive.value || fsOpen.value) {
+            return;
+          }
+          const level = currentLevel.value;
+          const currentLayout = layouts[level];
+          if (!currentLayout) {
+            return;
+          }
+          const maxCurrent = Math.max(
+            0,
+            currentLayout.contentHeight - viewportHeight,
+          );
+          const ratio = maxCurrent > 0 ? scrollY.value / maxCurrent : 0;
+          for (let target = 0; target < layouts.length; target++) {
+            if (target === level) {
+              continue;
+            }
+            const targetLayout = layouts[target];
+            if (!targetLayout) {
+              continue;
+            }
+            const maxTarget = Math.max(
+              0,
+              targetLayout.contentHeight - viewportHeight,
+            );
+            scrollTo(listRefs[target], 0, ratio * maxTarget, false);
+          }
+        }),
+      );
+    },
+    [layouts, viewportHeight, listRefs],
+  );
+
   const gridGesture = useMemo(() => {
     const maxScrollFor = (level: number) => {
       'worklet';
@@ -73,9 +119,9 @@ export const useGooglePhotosGrid = ({
           return;
         }
         cancelAnimation(progress);
+        cancelAnimation(syncPulse);
         progress.value = 0;
         targetLevel.value = currentLevel.value;
-        runOnJS(onZoomStart)();
         const layout = layouts[currentLevel.value];
         if (!layout) {
           return;
@@ -90,6 +136,28 @@ export const useGooglePhotosGrid = ({
         resolvedDirection.value = 0;
         isFullscreenPinch.value = false;
         pinchActive.value = true;
+        for (let dir = -1; dir <= 1; dir += 2) {
+          const target = currentLevel.value + dir;
+          const targetLayout =
+            target >= 0 && target < layouts.length ? layouts[target] : null;
+          if (!targetLayout) {
+            continue;
+          }
+          const targetItem = targetLayout.itemById[item.id];
+          const targetCenterY = targetItem
+            ? targetItem.y + targetItem.h / 2
+            : 0;
+          scrollTo(
+            listRefs[target],
+            0,
+            clampValue(
+              targetCenterY - anchorViewportY.value,
+              0,
+              maxScrollFor(target),
+            ),
+            false,
+          );
+        }
       })
       .onUpdate((e) => {
         if (fsOpen.value || !pinchActive.value) {
@@ -114,7 +182,6 @@ export const useGooglePhotosGrid = ({
               0,
               maxScrollFor(target),
             );
-            scrollTo(listRefs[target], 0, targetOffset.value, false);
           } else if (target >= layouts.length) {
             isFullscreenPinch.value = true;
             targetLevel.value = level;
@@ -161,7 +228,6 @@ export const useGooglePhotosGrid = ({
               }
             });
           }
-          runOnJS(onZoomEnd)();
           return;
         }
         if (
@@ -176,7 +242,6 @@ export const useGooglePhotosGrid = ({
               progress.value = 0;
               pinchActive.value = false;
               runOnJS(onCommitLevel)(committed);
-              runOnJS(onZoomEnd)();
             }
           });
         } else {
@@ -184,7 +249,6 @@ export const useGooglePhotosGrid = ({
             if (finished) {
               targetLevel.value = currentLevel.value;
               pinchActive.value = false;
-              runOnJS(onZoomEnd)();
             }
           });
         }
@@ -207,8 +271,6 @@ export const useGooglePhotosGrid = ({
         fsRectW.value = item.w;
         fsRectH.value = item.h;
         runOnJS(onOpenPhoto)(item.id);
-        fsOpen.value = true;
-        fsProgress.value = withTiming(1, { duration: 260 });
       });
 
     return Gesture.Simultaneous(pinch, tap);
@@ -219,8 +281,6 @@ export const useGooglePhotosGrid = ({
     onOpenPhoto,
     onClosePhoto,
     onCommitLevel,
-    onZoomStart,
-    onZoomEnd,
     scrollY,
     currentLevel,
     targetLevel,
@@ -231,6 +291,7 @@ export const useGooglePhotosGrid = ({
     anchorViewportY,
     resolvedDirection,
     isFullscreenPinch,
+    syncPulse,
     fsProgress,
     fsOpen,
     fsRectX,
