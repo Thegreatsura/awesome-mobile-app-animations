@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -44,12 +44,6 @@ const FullScreenPhoto = ({
   const dragX = useSharedValue(0);
   const dragY = useSharedValue(0);
 
-  const lastPhotoRef = useRef<Photo | null>(null);
-  if (photo) {
-    lastPhotoRef.current = photo;
-  }
-  const displayPhoto = photo ?? lastPhotoRef.current;
-
   useEffect(() => {
     if (!photo || pinchActive.value || fsOpen.value) {
       return;
@@ -62,10 +56,10 @@ const FullScreenPhoto = ({
     opacity: Math.min(1, 2 * fsProgress.value),
   }));
 
-  const fitW = displayPhoto
-    ? Math.min(viewportWidth, viewportHeight * displayPhoto.aspectRatio)
+  const fitW = photo
+    ? Math.min(viewportWidth, viewportHeight * photo.aspectRatio)
     : viewportWidth;
-  const fitH = displayPhoto ? fitW / displayPhoto.aspectRatio : viewportHeight;
+  const fitH = photo ? fitW / photo.aspectRatio : viewportHeight;
   const fitLeft = (viewportWidth - fitW) / 2;
   const fitTop = (viewportHeight - fitH) / 2;
 
@@ -187,16 +181,16 @@ const FullScreenPhoto = ({
             photoStyle,
           ]}
         >
-          {displayPhoto ? (
-            <View key={displayPhoto.id} style={StyleSheet.absoluteFill}>
+          {photo ? (
+            <View key={photo.id} style={StyleSheet.absoluteFill}>
               <Image
-                source={{ uri: displayPhoto.uri }}
+                source={{ uri: photo.uri }}
                 style={StyleSheet.absoluteFill}
                 contentFit="cover"
                 cachePolicy="memory-disk"
               />
               <Image
-                source={{ uri: displayPhoto.fullUri }}
+                source={{ uri: photo.fullUri }}
                 style={StyleSheet.absoluteFill}
                 contentFit="cover"
                 transition={200}
