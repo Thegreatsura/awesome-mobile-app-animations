@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { StyleSheet, TextInput } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -230,4 +231,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ScrollTab;
+export default memo(ScrollTab);
