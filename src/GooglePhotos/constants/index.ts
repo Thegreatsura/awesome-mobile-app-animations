@@ -6,6 +6,7 @@ export const INITIAL_ZOOM_INDEX = 1;
 export const GRID_GAP = 2;
 export const MONTH_HEADER_HEIGHT = 56;
 export const GRID_BOTTOM_PADDING = 120;
+export const GRID_TOP_INSET = 80;
 
 export const PINCH_COMMIT_THRESHOLD = 0.35;
 export const FULLSCREEN_COMMIT_THRESHOLD = 0.3;

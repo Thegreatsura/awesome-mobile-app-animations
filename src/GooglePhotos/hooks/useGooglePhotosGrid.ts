@@ -11,6 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import {
   FULLSCREEN_COMMIT_THRESHOLD,
+  GRID_TOP_INSET,
   INITIAL_ZOOM_INDEX,
   PINCH_COMMIT_THRESHOLD,
   PINCH_ZOOM_IN_THROW,
@@ -121,7 +122,7 @@ export const useGooglePhotosGrid = ({
               : undefined;
             if (item) {
               fsRectX.value = item.x;
-              fsRectY.value = item.y - scrollY.value;
+              fsRectY.value = item.y - scrollY.value + GRID_TOP_INSET;
               fsRectW.value = item.w;
               fsRectH.value = item.h;
               runOnJS(onOpenPhoto)(item.id);
@@ -196,7 +197,7 @@ export const useGooglePhotosGrid = ({
         }
         const item = findItemAtPoint(layout, e.x, scrollY.value + e.y);
         fsRectX.value = item.x;
-        fsRectY.value = item.y - scrollY.value;
+        fsRectY.value = item.y - scrollY.value + GRID_TOP_INSET;
         fsRectW.value = item.w;
         fsRectH.value = item.h;
         runOnJS(onOpenPhoto)(item.id);

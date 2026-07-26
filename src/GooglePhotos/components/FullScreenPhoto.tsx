@@ -35,7 +35,7 @@ const FullScreenPhoto = ({
   const { width: viewportWidth } = useWindowDimensions();
 
   const backdropStyle = useAnimatedStyle(() => ({
-    opacity: fsProgress.value,
+    opacity: Math.min(1, (1 / 0.75) * fsProgress.value),
   }));
 
   const photoStyle = useAnimatedStyle(() => ({
@@ -95,7 +95,10 @@ const FullScreenPhoto = ({
   return (
     <GestureDetector gesture={Gesture.Simultaneous(pinchOut, close)}>
       <Animated.View style={StyleSheet.absoluteFill}>
-        <Animated.View style={[styles.backdrop, backdropStyle]} />
+        <Animated.View
+          style={[styles.backdrop, backdropStyle]}
+          pointerEvents="none"
+        />
         <Animated.View style={[styles.photoContainer, photoStyle]}>
           <Image
             source={{ uri: photo.uri }}
@@ -123,7 +126,6 @@ const styles = StyleSheet.create({
   photoContainer: {
     position: 'absolute',
     overflow: 'hidden',
-    backgroundColor: '#2f2f2f',
   },
 });
 
