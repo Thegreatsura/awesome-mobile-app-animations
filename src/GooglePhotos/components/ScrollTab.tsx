@@ -55,6 +55,7 @@ const ScrollTab = ({
   };
 
   const isDragging = useSharedValue(false);
+  const dragOffset = useSharedValue(0);
   const thumbOpacity = useSharedValue(0);
   const thumbTranslateX = useSharedValue(SCROLL_TAB_THUMB_WIDTH);
   const lastFadeScheduledAt = useSharedValue(-1e9);
@@ -100,10 +101,10 @@ const ScrollTab = ({
       if (previous === null || value === previous) {
         return;
       }
-      if (pinchActive.value) {
+      if (pinchActive.value || isDragging.value) {
         return;
       }
-      if (Math.abs(value - lastFadeScheduledAt.value) > 8) {
+      if (Math.abs(value - lastFadeScheduledAt.value) > 24) {
         lastFadeScheduledAt.value = value;
         showThumbAndScheduleHide();
       }
@@ -123,15 +124,17 @@ const ScrollTab = ({
     .hitSlop({ left: 20, right: 8, top: 10, bottom: 10 })
     .onStart(() => {
       isDragging.value = true;
+      dragOffset.value = scrollY.value;
       showThumb();
     })
     .onChange((e) => {
       const maxScroll = maxScrollFor(currentLevel.value);
       const next = clampValue(
-        scrollY.value + (e.changeY / trackHeight) * maxScroll,
+        dragOffset.value + (e.changeY / trackHeight) * maxScroll,
         0,
         maxScroll,
       );
+      dragOffset.value = next;
       scrollTo(listRefs[currentLevel.value], 0, next, false);
     })
     .onEnd(() => {
@@ -141,7 +144,8 @@ const ScrollTab = ({
 
   const thumbStyle = useAnimatedStyle(() => {
     const maxScroll = maxScrollFor(currentLevel.value);
-    const ratio = maxScroll > 0 ? scrollY.value / maxScroll : 0;
+    const offset = isDragging.value ? dragOffset.value : scrollY.value;
+    const ratio = maxScroll > 0 ? offset / maxScroll : 0;
     return {
       opacity: maxScroll > 0 ? thumbOpacity.value : 0,
       transform: [
@@ -160,9 +164,10 @@ const ScrollTab = ({
     if (!layout) {
       return { text: '' } as any;
     }
+    const offset = isDragging.value ? dragOffset.value : scrollY.value;
     const rowIndex = findRowIndexForOffset(
       layout.rows,
-      scrollY.value + viewportHeight * 0.25,
+      offset + viewportHeight * 0.25,
     );
     return { text: layout.rows[rowIndex]?.label ?? '' } as any;
   });
