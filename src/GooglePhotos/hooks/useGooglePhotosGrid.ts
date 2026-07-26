@@ -27,6 +27,7 @@ export const useGooglePhotosGrid = ({
   currentLevel,
   listRefs,
   onOpenPhoto,
+  onClosePhoto,
   onCommitLevel,
   onZoomStart,
   onZoomEnd,
@@ -37,6 +38,7 @@ export const useGooglePhotosGrid = ({
   currentLevel: SharedValue<number>;
   listRefs: AnimatedRef<Animated.ScrollView>[];
   onOpenPhoto: (photoId: string) => void;
+  onClosePhoto: () => void;
   onCommitLevel: (targetLevel: number) => void;
   onZoomStart: () => void;
   onZoomEnd: () => void;
@@ -153,7 +155,11 @@ export const useGooglePhotosGrid = ({
             fsOpen.value = true;
             fsProgress.value = withTiming(1, { duration: 200 });
           } else {
-            fsProgress.value = withTiming(0, { duration: 180 });
+            fsProgress.value = withTiming(0, { duration: 180 }, (finished) => {
+              if (finished) {
+                runOnJS(onClosePhoto)();
+              }
+            });
           }
           runOnJS(onZoomEnd)();
           return;
@@ -211,6 +217,7 @@ export const useGooglePhotosGrid = ({
     viewportHeight,
     listRefs,
     onOpenPhoto,
+    onClosePhoto,
     onCommitLevel,
     onZoomStart,
     onZoomEnd,

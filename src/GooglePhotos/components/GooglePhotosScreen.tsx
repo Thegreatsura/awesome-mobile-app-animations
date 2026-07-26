@@ -80,7 +80,9 @@ export default function GooglePhotosScreen() {
   useEffect(() => {
     const task = InteractionManager.runAfterInteractions(() => {
       Image.prefetch(
-        PHOTOS.slice(0, FULLSCREEN_PREFETCH_COUNT).map((photo) => photo.fullUri),
+        PHOTOS.slice(0, FULLSCREEN_PREFETCH_COUNT).map(
+          (photo) => photo.fullUri,
+        ),
         { cachePolicy: 'disk' },
       );
     });
@@ -152,6 +154,7 @@ export default function GooglePhotosScreen() {
     currentLevel,
     listRefs,
     onOpenPhoto: setFullScreenPhotoId,
+    onClosePhoto: onClosed,
     onCommitLevel,
     onZoomStart,
     onZoomEnd,
@@ -163,32 +166,32 @@ export default function GooglePhotosScreen() {
         <GestureDetector gesture={gridGesture}>
           <View style={styles.viewport}>
             {layouts.map((layout, level) => (
-            <GridList
-              key={COLUMN_COUNTS[level]}
-              layout={layout}
-              level={level}
-              currentLevel={currentLevel}
-              targetLevel={targetLevel}
-              progress={progress}
-              active={level === activeLevel}
-              scrollEnabled={level === activeLevel && !zooming}
-              scrollOffset={scrollOffsets[level]}
-              listScrollRef={listRefs[level]}
-              estimatedItemSize={estimatedItemSizes[level]}
-              drawDistance={
-                level === activeLevel ? viewportHeight : viewportHeight * 0.5
-              }
-            />
-          ))}
-        </View>
-      </GestureDetector>
-      <ScrollTab
-        layouts={layouts}
-        viewportHeight={viewportHeight}
-        scrollY={scrollY}
-        currentLevel={currentLevel}
-        listRefs={listRefs}
-      />
+              <GridList
+                key={COLUMN_COUNTS[level]}
+                layout={layout}
+                level={level}
+                currentLevel={currentLevel}
+                targetLevel={targetLevel}
+                progress={progress}
+                active={level === activeLevel}
+                scrollEnabled={level === activeLevel && !zooming}
+                scrollOffset={scrollOffsets[level]}
+                listScrollRef={listRefs[level]}
+                estimatedItemSize={estimatedItemSizes[level]}
+                drawDistance={
+                  level === activeLevel ? viewportHeight : viewportHeight * 0.5
+                }
+              />
+            ))}
+          </View>
+        </GestureDetector>
+        <ScrollTab
+          layouts={layouts}
+          viewportHeight={viewportHeight}
+          scrollY={scrollY}
+          currentLevel={currentLevel}
+          listRefs={listRefs}
+        />
       </View>
       <View
         style={StyleSheet.absoluteFill}
