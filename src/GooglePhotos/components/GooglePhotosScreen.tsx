@@ -6,7 +6,6 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useAnimatedRef,
@@ -25,9 +24,6 @@ import { ZoomLayout } from '../types';
 import FullScreenPhoto from './FullScreenPhoto';
 import GridList from './GridList';
 import ScrollTab from './ScrollTab';
-
-const FULLSCREEN_PREFETCH_COUNT = 10;
-const FULLSCREEN_PREFETCH_DELAY_MS = 3000;
 
 if (COLUMN_COUNTS.length !== 3) {
   throw new Error('GooglePhotosScreen expects exactly 3 zoom levels');
@@ -81,26 +77,6 @@ export default function GooglePhotosScreen() {
     return () => task.cancel();
   }, [width]);
 
-  useEffect(() => {
-    let timeout: ReturnType<typeof setTimeout> | null = null;
-    const task = InteractionManager.runAfterInteractions(() => {
-      timeout = setTimeout(() => {
-        Image.prefetch(
-          PHOTOS.slice(0, FULLSCREEN_PREFETCH_COUNT).map(
-            (photo) => photo.fullUri,
-          ),
-          { cachePolicy: 'disk' },
-        );
-      }, FULLSCREEN_PREFETCH_DELAY_MS);
-    });
-    return () => {
-      task.cancel();
-      if (timeout !== null) {
-        clearTimeout(timeout);
-      }
-    };
-  }, []);
-
   const currentLevel = useSharedValue(INITIAL_ZOOM_INDEX);
   useEffect(() => {
     currentLevel.value = activeLevel;
@@ -130,6 +106,11 @@ export default function GooglePhotosScreen() {
           : width / COLUMN_COUNTS[level],
       ),
     [layouts, width],
+  );
+
+  const estimatedListSize = useMemo(
+    () => ({ width, height: viewportHeight }),
+    [width, viewportHeight],
   );
 
   const [fullScreenPhotoId, setFullScreenPhotoId] = useState<string | null>(
@@ -192,6 +173,7 @@ export default function GooglePhotosScreen() {
                   scrollOffset={scrollOffsets[level]}
                   listScrollRef={listRefs[level]}
                   estimatedItemSize={estimatedItemSizes[level]}
+                  estimatedListSize={estimatedListSize}
                   drawDistance={
                     level === activeLevel
                       ? viewportHeight
