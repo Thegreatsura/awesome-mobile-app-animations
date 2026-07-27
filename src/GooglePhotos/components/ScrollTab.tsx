@@ -4,6 +4,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   AnimatedRef,
   SharedValue,
+  cancelAnimation,
   scrollTo,
   useAnimatedProps,
   useAnimatedReaction,
@@ -25,6 +26,10 @@ import { ZoomLayout } from '../types';
 import { clampValue, findRowIndexForOffset } from '../utils';
 
 const AnimatedTextInput = Animated.createAnimatedComponent(TextInput);
+
+const SCRUB_SCROLL_THROTTLE_MS = 60;
+const SCRUB_SLOW_SPEED = 50;
+const SCRUB_FAST_SPEED = 150;
 
 const ScrollTab = ({
   layouts,
@@ -57,6 +62,7 @@ const ScrollTab = ({
 
   const isDragging = useSharedValue(false);
   const dragOffset = useSharedValue(0);
+  const scrollCooldown = useSharedValue(0);
   const thumbOpacity = useSharedValue(0);
   const thumbTranslateX = useSharedValue(SCROLL_TAB_THUMB_WIDTH);
   const lastFadeScheduledAt = useSharedValue(-1e9);
@@ -136,9 +142,29 @@ const ScrollTab = ({
         maxScroll,
       );
       dragOffset.value = next;
-      scrollTo(listRefs[currentLevel.value], 0, next, false);
+      if (scrollCooldown.value === 0) {
+        scrollTo(listRefs[currentLevel.value], 0, next, false);
+        const speed = Math.abs(e.velocityY);
+        const interval =
+          speed <= SCRUB_SLOW_SPEED
+            ? 0
+            : clampValue(
+                ((speed - SCRUB_SLOW_SPEED) /
+                  (SCRUB_FAST_SPEED - SCRUB_SLOW_SPEED)) *
+                  SCRUB_SCROLL_THROTTLE_MS,
+                0,
+                SCRUB_SCROLL_THROTTLE_MS,
+              );
+        if (interval > 0) {
+          scrollCooldown.value = 1;
+          scrollCooldown.value = withTiming(0, { duration: interval });
+        }
+      }
     })
     .onEnd(() => {
+      cancelAnimation(scrollCooldown);
+      scrollCooldown.value = 0;
+      scrollTo(listRefs[currentLevel.value], 0, dragOffset.value, false);
       isDragging.value = false;
       scheduleHideThumb();
     });
