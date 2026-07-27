@@ -30,12 +30,13 @@ export const computeJustifiedLayout = (
   let y = 0;
   let currentMonth = '';
   let rowBuffer: Photo[] = [];
+  let rowSumAspect = 0;
 
   const flushRow = (justify: boolean) => {
     if (rowBuffer.length === 0) {
       return;
     }
-    const sumAspectRatio = rowBuffer.reduce((s, p) => s + p.aspectRatio, 0);
+    const sumAspectRatio = rowSumAspect;
     const availableWidth = screenWidth - GRID_GAP * (rowBuffer.length - 1);
     const rowHeight = justify
       ? availableWidth / sumAspectRatio
@@ -86,6 +87,7 @@ export const computeJustifiedLayout = (
     });
     y += rowHeight + GRID_GAP;
     rowBuffer = [];
+    rowSumAspect = 0;
   };
 
   photos.forEach((photo) => {
@@ -102,9 +104,9 @@ export const computeJustifiedLayout = (
       y += MONTH_HEADER_HEIGHT;
     }
     rowBuffer.push(photo);
-    const sumAspectRatio = rowBuffer.reduce((s, p) => s + p.aspectRatio, 0);
+    rowSumAspect += photo.aspectRatio;
     const availableWidth = screenWidth - GRID_GAP * (rowBuffer.length - 1);
-    if (sumAspectRatio * targetRowHeight >= availableWidth) {
+    if (rowSumAspect * targetRowHeight >= availableWidth) {
       flushRow(true);
     }
   });
