@@ -14,7 +14,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faSort } from '@fortawesome/free-solid-svg-icons';
+import { faSort } from '@fortawesome/free-solid-svg-icons/faSort';
 import {
   SCROLL_TAB_BOTTOM_INSET,
   SCROLL_TAB_THUMB_HEIGHT,
