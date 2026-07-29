@@ -1,15 +1,28 @@
-import { memo } from 'react';
+import { memo, useCallback } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import type { ScrollViewProps } from 'react-native';
 import { Image } from 'expo-image';
 import Animated, {
   SharedValue,
   interpolate,
   useAnimatedStyle,
 } from 'react-native-reanimated';
+import {
+  ScrollView as GHScrollView,
+  GestureType,
+} from 'react-native-gesture-handler';
 import { AnimatedLegendList } from '@legendapp/list/reanimated';
 import type { LegendListRenderItemProps } from '@legendapp/list/react-native';
 import { GRID_BOTTOM_PADDING } from '../constants';
 import { ListEntry, ZoomLayout } from '../types';
+
+// Animated wrapper so reanimated's scroll-offset tracking + scrollTo keep
+// working exactly as they do with the default Reanimated.ScrollView.
+const AnimatedGHScrollView = Animated.createAnimatedComponent(GHScrollView);
+
+// Props are internal LegendList<->reanimated bridge glue (the animated `ref`
+// arrives as a plain prop), so they're intentionally untyped here.
+type BridgeScrollProps = ScrollViewProps & { ref?: React.Ref<unknown> };
 
 const keyExtractor = (item: ListEntry) => item.key;
 const getItemType = (item: ListEntry) => item.kind;
@@ -51,7 +64,11 @@ const HeaderCell = memo(({ entry }: { entry: ListEntry }) => {
 HeaderCell.displayName = 'HeaderCell';
 
 const renderItem = ({ item }: LegendListRenderItemProps<ListEntry>) =>
-  item.kind === 'header' ? <HeaderCell entry={item} /> : <RowCell entry={item} />;
+  item.kind === 'header' ? (
+    <HeaderCell entry={item} />
+  ) : (
+    <RowCell entry={item} />
+  );
 
 const GridList = ({
   layout,
@@ -66,6 +83,7 @@ const GridList = ({
   estimatedItemSize,
   estimatedListSize,
   drawDistance,
+  scrollSimultaneousHandlers,
 }: {
   layout: ZoomLayout;
   level: number;
@@ -79,7 +97,19 @@ const GridList = ({
   estimatedItemSize: number;
   estimatedListSize: { width: number; height: number };
   drawDistance: number;
+  scrollSimultaneousHandlers: React.RefObject<GestureType | undefined>[];
 }) => {
+  const renderScrollComponent = useCallback(
+    ({ ref, ...scrollProps }: BridgeScrollProps) => (
+      <AnimatedGHScrollView
+        ref={ref as React.Ref<React.ComponentRef<typeof GHScrollView>>}
+        simultaneousHandlers={scrollSimultaneousHandlers}
+        {...scrollProps}
+      />
+    ),
+    [scrollSimultaneousHandlers],
+  );
+
   const wrapperStyle = useAnimatedStyle(() => {
     let opacity = 0;
     let scale = 1;
@@ -116,6 +146,7 @@ const GridList = ({
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
         renderItem={renderItem}
+        renderScrollComponent={renderScrollComponent}
       />
     </Animated.View>
   );

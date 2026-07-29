@@ -6,7 +6,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { GestureDetector } from 'react-native-gesture-handler';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useAnimatedRef,
   useDerivedValue,
@@ -19,11 +19,13 @@ import {
   PHOTOS,
 } from '../constants';
 import { useGooglePhotosGrid } from '../hooks/useGooglePhotosGrid';
+import { useTouchIndicator } from '../hooks/useTouchIndicator';
 import { computeJustifiedLayout } from '../utils';
 import { ZoomLayout } from '../types';
 import FullScreenPhoto from './FullScreenPhoto';
 import GridList from './GridList';
 import ScrollTab from './ScrollTab';
+import TouchIndicator from './TouchIndicator';
 
 if (COLUMN_COUNTS.length !== 3) {
   throw new Error('GooglePhotosScreen expects exactly 3 zoom levels');
@@ -134,6 +136,7 @@ export default function GooglePhotosScreen() {
 
   const {
     gridGesture,
+    gridGestureRef,
     targetLevel,
     progress,
     pinchActive,
@@ -154,10 +157,30 @@ export default function GooglePhotosScreen() {
     onCommitLevel,
   });
 
+  const {
+    gesture: touchGesture,
+    gestureRef: touchGestureRef,
+    xs: touchXs,
+    ys: touchYs,
+    active: touchActive,
+  } = useTouchIndicator();
+  const gridGestureWithTouch = useMemo(
+    () => Gesture.Simultaneous(gridGesture, touchGesture),
+    [gridGesture, touchGesture],
+  );
+  const scrollSimultaneousHandlers = useMemo(
+    () => [gridGestureRef, touchGestureRef],
+    [gridGestureRef, touchGestureRef],
+  );
+  const touchPoints = useMemo(
+    () => ({ xs: touchXs, ys: touchYs, active: touchActive }),
+    [touchXs, touchYs, touchActive],
+  );
+
   return (
     <View style={styles.root}>
       <View style={styles.container} onLayout={onViewportLayout}>
-        <GestureDetector gesture={gridGesture}>
+        <GestureDetector gesture={gridGestureWithTouch}>
           <View style={styles.viewport}>
             {layouts.map((layout, level) =>
               layout === null ? null : (
@@ -179,6 +202,7 @@ export default function GooglePhotosScreen() {
                       ? viewportHeight
                       : viewportHeight * 0.25
                   }
+                  scrollSimultaneousHandlers={scrollSimultaneousHandlers}
                 />
               ),
             )}
@@ -210,9 +234,11 @@ export default function GooglePhotosScreen() {
             fsRectH={fsRectH}
             viewportHeight={viewportHeight}
             onClosed={onClosed}
+            touchPoints={touchPoints}
           />
         ) : null}
       </View>
+      <TouchIndicator xs={touchXs} ys={touchYs} active={touchActive} />
     </View>
   );
 }

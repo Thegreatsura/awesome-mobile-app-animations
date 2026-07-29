@@ -13,6 +13,7 @@ import Animated, {
 import { Photo } from '../types';
 import { clampValue } from '../utils';
 import { FULLSCREEN_DISMISS_THRESHOLD } from '../constants';
+import { TouchPoints, buildTouchTrackerGesture } from '../hooks/useTouchIndicator';
 
 const FullScreenPhoto = ({
   photo,
@@ -26,6 +27,7 @@ const FullScreenPhoto = ({
   fsRectH,
   viewportHeight,
   onClosed,
+  touchPoints,
 }: {
   photo: Photo | null;
   openSignal: number;
@@ -38,6 +40,7 @@ const FullScreenPhoto = ({
   fsRectH: SharedValue<number>;
   viewportHeight: number;
   onClosed: () => void;
+  touchPoints: TouchPoints;
 }) => {
   const { width: viewportWidth } = useWindowDimensions();
 
@@ -167,8 +170,15 @@ const FullScreenPhoto = ({
     return Gesture.Simultaneous(pinchOut, pan, close);
   }, [fsOpen, fsProgress, dragX, dragY, viewportHeight, onClosed]);
 
+  // Keep the finger indicator alive over the fullscreen viewer (its own
+  // detector, so it needs its own tracker writing the shared touch points).
+  const gestureWithTouch = useMemo(
+    () => Gesture.Simultaneous(gesture, buildTouchTrackerGesture(touchPoints)),
+    [gesture, touchPoints],
+  );
+
   return (
-    <GestureDetector gesture={gesture}>
+    <GestureDetector gesture={gestureWithTouch}>
       <Animated.View style={StyleSheet.absoluteFill}>
         <Animated.View
           style={[styles.backdrop, backdropStyle]}
