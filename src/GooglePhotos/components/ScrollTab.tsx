@@ -21,15 +21,14 @@ import {
   SCROLL_TAB_THUMB_HEIGHT,
   SCROLL_TAB_THUMB_WIDTH,
   SCROLL_TAB_TOP_INSET,
+  SCRUB_FAST_SPEED_BY_LEVEL,
+  SCRUB_SCROLL_THROTTLE_MS_BY_LEVEL,
+  SCRUB_SLOW_SPEED_BY_LEVEL,
 } from '../constants';
 import { ZoomLayout } from '../types';
 import { clampValue, findRowIndexForOffset } from '../utils';
 
 const AnimatedTextInput = Animated.createAnimatedComponent(TextInput);
-
-const SCRUB_SCROLL_THROTTLE_MS = 60;
-const SCRUB_SLOW_SPEED = 50;
-const SCRUB_FAST_SPEED = 150;
 
 const ScrollTab = ({
   layouts,
@@ -144,16 +143,18 @@ const ScrollTab = ({
       dragOffset.value = next;
       if (scrollCooldown.value === 0) {
         scrollTo(listRefs[currentLevel.value], 0, next, false);
+        const level = currentLevel.value;
+        const slowSpeed = SCRUB_SLOW_SPEED_BY_LEVEL[level];
+        const fastSpeed = SCRUB_FAST_SPEED_BY_LEVEL[level];
+        const throttleMs = SCRUB_SCROLL_THROTTLE_MS_BY_LEVEL[level];
         const speed = Math.abs(e.velocityY);
         const interval =
-          speed <= SCRUB_SLOW_SPEED
+          speed <= slowSpeed
             ? 0
             : clampValue(
-                ((speed - SCRUB_SLOW_SPEED) /
-                  (SCRUB_FAST_SPEED - SCRUB_SLOW_SPEED)) *
-                  SCRUB_SCROLL_THROTTLE_MS,
+                ((speed - slowSpeed) / (fastSpeed - slowSpeed)) * throttleMs,
                 0,
-                SCRUB_SCROLL_THROTTLE_MS,
+                throttleMs,
               );
         if (interval > 0) {
           scrollCooldown.value = 1;

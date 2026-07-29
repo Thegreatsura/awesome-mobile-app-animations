@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { Gesture } from 'react-native-gesture-handler';
+import { useMemo, useRef } from 'react';
+import { Gesture, GestureType } from 'react-native-gesture-handler';
 import Animated, {
   AnimatedRef,
   SharedValue,
@@ -18,6 +18,8 @@ import {
   PINCH_COMMIT_THRESHOLD,
   PINCH_ZOOM_IN_THROW,
   PINCH_ZOOM_OUT_THROW,
+  SYNC_SCROLL_DELAY_BY_LEVEL,
+  SYNC_SCROLL_RESCHEDULE_THRESHOLD_BY_LEVEL,
 } from '../constants';
 import { ZoomLayout } from '../types';
 import { clampValue, findItemAtPoint } from '../utils';
@@ -46,6 +48,10 @@ export const useGooglePhotosGrid = ({
   const pinchActive = useSharedValue(false);
   const targetOffset = useSharedValue(0);
 
+  // Referenced by the scroll views' `simultaneousHandlers` so pinch/tap keep
+  // working alongside the gesture-handler ScrollView.
+  const gridGestureRef = useRef<GestureType | undefined>(undefined);
+
   const anchorId = useSharedValue('');
   const anchorViewportY = useSharedValue(0);
   const resolvedDirection = useSharedValue(0);
@@ -59,6 +65,7 @@ export const useGooglePhotosGrid = ({
   const fsRectH = useSharedValue(1);
 
   const syncPulse = useSharedValue(0);
+  const lastSyncScheduleY = useSharedValue(0);
   useAnimatedReaction(
     () => scrollY.value,
     (value, previous) => {
@@ -68,10 +75,18 @@ export const useGooglePhotosGrid = ({
       if (pinchActive.value || fsOpen.value) {
         return;
       }
+      const level = currentLevel.value;
+      if (
+        Math.abs(value - lastSyncScheduleY.value) <
+        SYNC_SCROLL_RESCHEDULE_THRESHOLD_BY_LEVEL[level]
+      ) {
+        return;
+      }
+      lastSyncScheduleY.value = value;
       cancelAnimation(syncPulse);
       syncPulse.value = 0;
       syncPulse.value = withDelay(
-        150,
+        SYNC_SCROLL_DELAY_BY_LEVEL[level],
         withTiming(1, { duration: 16 }, (finished) => {
           if (!finished || pinchActive.value || fsOpen.value) {
             return;
@@ -114,6 +129,7 @@ export const useGooglePhotosGrid = ({
     };
 
     const pinch = Gesture.Pinch()
+      .withRef(gridGestureRef)
       .onStart((e) => {
         if (fsOpen.value) {
           return;
@@ -302,6 +318,7 @@ export const useGooglePhotosGrid = ({
 
   return {
     gridGesture,
+    gridGestureRef,
     targetLevel,
     progress,
     pinchActive,
