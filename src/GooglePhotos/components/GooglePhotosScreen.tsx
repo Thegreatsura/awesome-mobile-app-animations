@@ -206,6 +206,7 @@ export default function GooglePhotosScreen() {
                       : viewportHeight * 0.25
                   }
                   scrollSimultaneousHandlers={scrollSimultaneousHandlers}
+                  pinchActive={pinchActive}
                   onScrollEndDrag={
                     level === activeLevel ? onScrollEndDrag : undefined
                   }

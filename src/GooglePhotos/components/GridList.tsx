@@ -5,6 +5,7 @@ import { Image } from 'expo-image';
 import Animated, {
   SharedValue,
   interpolate,
+  useAnimatedProps,
   useAnimatedStyle,
 } from 'react-native-reanimated';
 import {
@@ -79,6 +80,7 @@ const GridList = ({
   estimatedListSize,
   drawDistance,
   scrollSimultaneousHandlers,
+  pinchActive,
   onScrollEndDrag,
   onMomentumScrollBegin,
   onMomentumScrollEnd,
@@ -96,19 +98,30 @@ const GridList = ({
   estimatedListSize: { width: number; height: number };
   drawDistance: number;
   scrollSimultaneousHandlers: React.RefObject<GestureType | undefined>[];
+  pinchActive: SharedValue<boolean>;
   onScrollEndDrag?: () => void;
   onMomentumScrollBegin?: () => void;
   onMomentumScrollEnd?: () => void;
 }) => {
+  const scrollEnabledProps = useAnimatedProps(
+    () => ({ scrollEnabled: scrollEnabled && !pinchActive.value }),
+    [scrollEnabled],
+  );
+
   const renderScrollComponent = useCallback(
-    ({ ref, ...scrollProps }: BridgeScrollProps) => (
+    ({
+      ref,
+      scrollEnabled: _scrollEnabled,
+      ...scrollProps
+    }: BridgeScrollProps) => (
       <AnimatedGHScrollView
         ref={ref as React.Ref<React.ComponentRef<typeof GHScrollView>>}
         simultaneousHandlers={scrollSimultaneousHandlers}
+        animatedProps={scrollEnabledProps}
         {...scrollProps}
       />
     ),
-    [scrollSimultaneousHandlers],
+    [scrollSimultaneousHandlers, scrollEnabledProps],
   );
 
   const wrapperStyle = useAnimatedStyle(() => {
