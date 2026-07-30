@@ -63,6 +63,7 @@ export const computeJustifiedLayout = (
           height: rowHeight,
           backgroundColor: PLACEHOLDER_COLOR,
         },
+        source: { uri: photo.uri },
       };
       items.push(item);
       rowItems.push(item);
@@ -84,6 +85,7 @@ export const computeJustifiedLayout = (
       startIndex,
       endIndex,
       items: rowItems,
+      containerStyle: { height: rowHeight + GRID_GAP },
     });
     y += rowHeight + GRID_GAP;
     rowBuffer = [];
@@ -100,6 +102,7 @@ export const computeJustifiedLayout = (
         key: `h:${photo.fullMonthLabel}`,
         label: photo.fullMonthLabel,
         height: MONTH_HEADER_HEIGHT,
+        containerStyle: { height: MONTH_HEADER_HEIGHT },
       });
       y += MONTH_HEADER_HEIGHT;
     }
@@ -131,6 +134,26 @@ export const findRowIndexForOffset = (rows: LayoutRow[], y: number): number => {
   while (lo <= hi) {
     const mid = (lo + hi) >> 1;
     if (rows[mid].y <= y) {
+      ans = mid;
+      lo = mid + 1;
+    } else {
+      hi = mid - 1;
+    }
+  }
+  return ans;
+};
+
+export const findHeaderIndexForOffset = (
+  headers: MonthHeader[],
+  y: number,
+): number => {
+  'worklet';
+  let lo = 0;
+  let hi = headers.length - 1;
+  let ans = 0;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (headers[mid].y <= y) {
       ans = mid;
       lo = mid + 1;
     } else {

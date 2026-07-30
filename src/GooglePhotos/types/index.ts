@@ -1,4 +1,4 @@
-import type { ImageStyle } from 'react-native';
+import type { ImageStyle, ViewStyle } from 'react-native';
 
 export interface Photo {
   id: string;
@@ -18,6 +18,7 @@ export interface LayoutItem {
   w: number;
   h: number;
   style: ImageStyle;
+  source: { uri: string };
 }
 
 export interface LayoutRow {
@@ -34,7 +35,13 @@ export interface MonthHeader {
 }
 
 export type ListEntry =
-  | { kind: 'header'; key: string; label: string; height: number }
+  | {
+      kind: 'header';
+      key: string;
+      label: string;
+      height: number;
+      containerStyle: ViewStyle;
+    }
   | {
       kind: 'row';
       key: string;
@@ -42,6 +49,7 @@ export type ListEntry =
       startIndex: number;
       endIndex: number;
       items: LayoutItem[];
+      containerStyle: ViewStyle;
     };
 
 export interface ZoomLayout {

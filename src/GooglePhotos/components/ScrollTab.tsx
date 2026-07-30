@@ -26,7 +26,11 @@ import {
   SCRUB_SLOW_SPEED_BY_LEVEL,
 } from '../constants';
 import { ZoomLayout } from '../types';
-import { clampValue, findRowIndexForOffset } from '../utils';
+import {
+  clampValue,
+  findHeaderIndexForOffset,
+  findRowIndexForOffset,
+} from '../utils';
 
 const AnimatedTextInput = Animated.createAnimatedComponent(TextInput);
 
@@ -61,6 +65,7 @@ const ScrollTab = ({
 
   const isDragging = useSharedValue(false);
   const dragOffset = useSharedValue(0);
+  const lastHeaderIndex = useSharedValue(-1);
   const scrollCooldown = useSharedValue(0);
   const thumbOpacity = useSharedValue(0);
   const thumbTranslateX = useSharedValue(SCROLL_TAB_THUMB_WIDTH);
@@ -131,19 +136,32 @@ const ScrollTab = ({
     .onStart(() => {
       isDragging.value = true;
       dragOffset.value = scrollY.value;
+      const layout = layouts[currentLevel.value];
+      lastHeaderIndex.value = layout
+        ? findHeaderIndexForOffset(layout.headers, scrollY.value)
+        : -1;
       showThumb();
     })
     .onChange((e) => {
-      const maxScroll = maxScrollFor(currentLevel.value);
+      const level = currentLevel.value;
+      const layout = layouts[level];
+      if (!layout) {
+        return;
+      }
+      const maxScroll = maxScrollFor(level);
       const next = clampValue(
         dragOffset.value + (e.changeY / trackHeight) * maxScroll,
         0,
         maxScroll,
       );
       dragOffset.value = next;
-      if (scrollCooldown.value === 0) {
-        scrollTo(listRefs[currentLevel.value], 0, next, false);
-        const level = currentLevel.value;
+      // The grid, like Google Photos, snaps to month headers: only move when we
+      // cross into a new month, and land on that month's start. That's a
+      // handful of discrete targets instead of a fresh viewport every frame.
+      const headerIndex = findHeaderIndexForOffset(layout.headers, next);
+      if (headerIndex !== lastHeaderIndex.value && scrollCooldown.value === 0) {
+        lastHeaderIndex.value = headerIndex;
+        scrollTo(listRefs[level], 0, layout.headers[headerIndex].y, false);
         const slowSpeed = SCRUB_SLOW_SPEED_BY_LEVEL[level];
         const fastSpeed = SCRUB_FAST_SPEED_BY_LEVEL[level];
         const throttleMs = SCRUB_SCROLL_THROTTLE_MS_BY_LEVEL[level];
@@ -165,7 +183,16 @@ const ScrollTab = ({
     .onEnd(() => {
       cancelAnimation(scrollCooldown);
       scrollCooldown.value = 0;
-      scrollTo(listRefs[currentLevel.value], 0, dragOffset.value, false);
+      const level = currentLevel.value;
+      const layout = layouts[level];
+      if (layout) {
+        const headerIndex = findHeaderIndexForOffset(
+          layout.headers,
+          dragOffset.value,
+        );
+        lastHeaderIndex.value = headerIndex;
+        scrollTo(listRefs[level], 0, layout.headers[headerIndex].y, false);
+      }
       isDragging.value = false;
       scheduleHideThumb();
     });
