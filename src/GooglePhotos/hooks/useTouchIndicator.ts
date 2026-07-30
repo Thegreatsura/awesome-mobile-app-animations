@@ -29,10 +29,16 @@ export const buildTouchTrackerGesture = (
 
   const gesture = ref ? Gesture.Manual().withRef(ref) : Gesture.Manual();
   return gesture
-    .onTouchesDown((e) => apply(e.allTouches))
-    .onTouchesMove((e) => apply(e.allTouches))
+    .onTouchesDown((e) => {
+      'worklet';
+      apply(e.allTouches);
+    })
+    .onTouchesMove((e) => {
+      'worklet';
+      apply(e.allTouches);
+    })
     .onTouchesUp((e) => {
-      // allTouches still contains the fingers going up; drop them by id.
+      'worklet';
       const remaining: { absoluteX: number; absoluteY: number }[] = [];
       for (let i = 0; i < e.allTouches.length; i++) {
         const t = e.allTouches[i];
@@ -49,7 +55,10 @@ export const buildTouchTrackerGesture = (
       }
       apply(remaining);
     })
-    .onTouchesCancelled(() => apply([]));
+    .onTouchesCancelled(() => {
+      'worklet';
+      apply([]);
+    });
 };
 
 export const useTouchIndicator = () => {
