@@ -146,6 +146,9 @@ export default function GooglePhotosScreen() {
     fsRectY,
     fsRectW,
     fsRectH,
+    onScrollEndDrag,
+    onMomentumScrollBegin,
+    onMomentumScrollEnd,
   } = useGooglePhotosGrid({
     layouts,
     viewportHeight,
@@ -203,6 +206,15 @@ export default function GooglePhotosScreen() {
                       : viewportHeight * 0.25
                   }
                   scrollSimultaneousHandlers={scrollSimultaneousHandlers}
+                  onScrollEndDrag={
+                    level === activeLevel ? onScrollEndDrag : undefined
+                  }
+                  onMomentumScrollBegin={
+                    level === activeLevel ? onMomentumScrollBegin : undefined
+                  }
+                  onMomentumScrollEnd={
+                    level === activeLevel ? onMomentumScrollEnd : undefined
+                  }
                 />
               ),
             )}

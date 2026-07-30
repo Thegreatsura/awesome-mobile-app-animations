@@ -79,6 +79,9 @@ const GridList = ({
   estimatedListSize,
   drawDistance,
   scrollSimultaneousHandlers,
+  onScrollEndDrag,
+  onMomentumScrollBegin,
+  onMomentumScrollEnd,
 }: {
   layout: ZoomLayout;
   level: number;
@@ -93,6 +96,9 @@ const GridList = ({
   estimatedListSize: { width: number; height: number };
   drawDistance: number;
   scrollSimultaneousHandlers: React.RefObject<GestureType | undefined>[];
+  onScrollEndDrag?: () => void;
+  onMomentumScrollBegin?: () => void;
+  onMomentumScrollEnd?: () => void;
 }) => {
   const renderScrollComponent = useCallback(
     ({ ref, ...scrollProps }: BridgeScrollProps) => (
@@ -142,6 +148,9 @@ const GridList = ({
         contentContainerStyle={styles.content}
         renderItem={renderItem}
         renderScrollComponent={renderScrollComponent}
+        onScrollEndDrag={onScrollEndDrag}
+        onMomentumScrollBegin={onMomentumScrollBegin}
+        onMomentumScrollEnd={onMomentumScrollEnd}
       />
     </Animated.View>
   );

@@ -1,14 +1,13 @@
-import { useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { Gesture, GestureType } from 'react-native-gesture-handler';
 import Animated, {
   AnimatedRef,
   SharedValue,
   cancelAnimation,
   runOnJS,
+  runOnUI,
   scrollTo,
-  useAnimatedReaction,
   useSharedValue,
-  withDelay,
   withTiming,
 } from 'react-native-reanimated';
 import {
@@ -18,8 +17,6 @@ import {
   PINCH_COMMIT_THRESHOLD,
   PINCH_ZOOM_IN_THROW,
   PINCH_ZOOM_OUT_THROW,
-  SYNC_SCROLL_DELAY_BY_LEVEL,
-  SYNC_SCROLL_RESCHEDULE_THRESHOLD_BY_LEVEL,
 } from '../constants';
 import { ZoomLayout } from '../types';
 import { clampValue, findItemAtPoint } from '../utils';
@@ -64,62 +61,65 @@ export const useGooglePhotosGrid = ({
   const fsRectW = useSharedValue(1);
   const fsRectH = useSharedValue(1);
 
-  const syncPulse = useSharedValue(0);
-  const lastSyncScheduleY = useSharedValue(0);
-  useAnimatedReaction(
-    () => scrollY.value,
-    (value, previous) => {
-      if (previous === null || value === previous) {
-        return;
+  const syncOtherLevels = useCallback(() => {
+    'worklet';
+    if (pinchActive.value || fsOpen.value) {
+      return;
+    }
+    const level = currentLevel.value;
+    const currentLayout = layouts[level];
+    if (!currentLayout) {
+      return;
+    }
+    const maxCurrent = Math.max(
+      0,
+      currentLayout.contentHeight - viewportHeight,
+    );
+    const ratio = maxCurrent > 0 ? scrollY.value / maxCurrent : 0;
+    for (let target = 0; target < layouts.length; target++) {
+      if (target === level) {
+        continue;
       }
-      if (pinchActive.value || fsOpen.value) {
-        return;
+      const targetLayout = layouts[target];
+      if (!targetLayout) {
+        continue;
       }
-      const level = currentLevel.value;
-      if (
-        Math.abs(value - lastSyncScheduleY.value) <
-        SYNC_SCROLL_RESCHEDULE_THRESHOLD_BY_LEVEL[level]
-      ) {
-        return;
-      }
-      lastSyncScheduleY.value = value;
-      cancelAnimation(syncPulse);
-      syncPulse.value = 0;
-      syncPulse.value = withDelay(
-        SYNC_SCROLL_DELAY_BY_LEVEL[level],
-        withTiming(1, { duration: 16 }, (finished) => {
-          if (!finished || pinchActive.value || fsOpen.value) {
-            return;
-          }
-          const level = currentLevel.value;
-          const currentLayout = layouts[level];
-          if (!currentLayout) {
-            return;
-          }
-          const maxCurrent = Math.max(
-            0,
-            currentLayout.contentHeight - viewportHeight,
-          );
-          const ratio = maxCurrent > 0 ? scrollY.value / maxCurrent : 0;
-          for (let target = 0; target < layouts.length; target++) {
-            if (target === level) {
-              continue;
-            }
-            const targetLayout = layouts[target];
-            if (!targetLayout) {
-              continue;
-            }
-            const maxTarget = Math.max(
-              0,
-              targetLayout.contentHeight - viewportHeight,
-            );
-            scrollTo(listRefs[target], 0, ratio * maxTarget, false);
-          }
-        }),
+      const maxTarget = Math.max(
+        0,
+        targetLayout.contentHeight - viewportHeight,
       );
-    },
-    [layouts, viewportHeight, listRefs],
-  );
+      scrollTo(listRefs[target], 0, ratio * maxTarget, false);
+    }
+  }, [
+    layouts,
+    viewportHeight,
+    listRefs,
+    pinchActive,
+    fsOpen,
+    currentLevel,
+    scrollY,
+  ]);
+
+  // Debounced 500ms after the active list truly comes to rest. A scroll-end
+  // (fling settle or no-momentum release) arms the timer; a following momentum
+  // start clears it, so a long fling never fires it mid-scroll.
+  const settleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearSettleTimer = useCallback(() => {
+    if (settleTimerRef.current !== null) {
+      clearTimeout(settleTimerRef.current);
+      settleTimerRef.current = null;
+    }
+  }, []);
+  const scheduleSync = useCallback(() => {
+    clearSettleTimer();
+    settleTimerRef.current = setTimeout(() => {
+      settleTimerRef.current = null;
+      runOnUI(syncOtherLevels)();
+    }, 500);
+  }, [clearSettleTimer, syncOtherLevels]);
+  const onScrollEndDrag = scheduleSync;
+  const onMomentumScrollBegin = clearSettleTimer;
+  const onMomentumScrollEnd = scheduleSync;
 
   const gridGesture = useMemo(() => {
     const maxScrollFor = (level: number) => {
@@ -135,7 +135,6 @@ export const useGooglePhotosGrid = ({
           return;
         }
         cancelAnimation(progress);
-        cancelAnimation(syncPulse);
         progress.value = 0;
         targetLevel.value = currentLevel.value;
         const layout = layouts[currentLevel.value];
@@ -307,7 +306,6 @@ export const useGooglePhotosGrid = ({
     anchorViewportY,
     resolvedDirection,
     isFullscreenPinch,
-    syncPulse,
     fsProgress,
     fsOpen,
     fsRectX,
@@ -329,5 +327,8 @@ export const useGooglePhotosGrid = ({
     fsRectY,
     fsRectW,
     fsRectH,
+    onScrollEndDrag,
+    onMomentumScrollBegin,
+    onMomentumScrollEnd,
   };
 };
