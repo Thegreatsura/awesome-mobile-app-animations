@@ -16,12 +16,8 @@ import type { LegendListRenderItemProps } from '@legendapp/list/react-native';
 import { GRID_BOTTOM_PADDING } from '../constants';
 import { ListEntry, ZoomLayout } from '../types';
 
-// Animated wrapper so reanimated's scroll-offset tracking + scrollTo keep
-// working exactly as they do with the default Reanimated.ScrollView.
 const AnimatedGHScrollView = Animated.createAnimatedComponent(GHScrollView);
 
-// Props are internal LegendList<->reanimated bridge glue (the animated `ref`
-// arrives as a plain prop), so they're intentionally untyped here.
 type BridgeScrollProps = ScrollViewProps & { ref?: React.Ref<unknown> };
 
 const keyExtractor = (item: ListEntry) => item.key;
@@ -33,17 +29,16 @@ const RowCell = memo(({ entry }: { entry: ListEntry }) => {
     return null;
   }
   return (
-    <View style={{ height: entry.height }}>
-      {entry.items.map((item) => (
+    <View style={entry.containerStyle}>
+      {entry.items.map((item, index) => (
         <Image
-          key={item.id}
-          source={{ uri: item.uri }}
+          key={index}
+          source={item.source}
           recyclingKey={item.id}
           style={item.style}
           contentFit="cover"
           cachePolicy="memory-disk"
           allowDownscaling
-          transition={200}
         />
       ))}
     </View>
@@ -56,7 +51,7 @@ const HeaderCell = memo(({ entry }: { entry: ListEntry }) => {
     return null;
   }
   return (
-    <View style={{ height: entry.height }}>
+    <View style={entry.containerStyle}>
       <Text style={styles.monthHeader}>{entry.label}</Text>
     </View>
   );
