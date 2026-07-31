@@ -27,6 +27,7 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
+          <string>awesomemobileappanimations</string>
           <string>com.anonymous.awesome-mobile-app-animations</string>
         </array>
       </dict>
