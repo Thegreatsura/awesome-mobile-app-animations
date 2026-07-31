@@ -63,7 +63,7 @@ export const computeJustifiedLayout = (
           height: rowHeight,
           backgroundColor: PLACEHOLDER_COLOR,
         },
-        source: { uri: photo.uri },
+        source: { url: photo.uri },
       };
       items.push(item);
       rowItems.push(item);

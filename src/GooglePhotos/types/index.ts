@@ -18,7 +18,7 @@ export interface LayoutItem {
   w: number;
   h: number;
   style: ImageStyle;
-  source: { uri: string };
+  source: { url: string };
 }
 
 export interface LayoutRow {
