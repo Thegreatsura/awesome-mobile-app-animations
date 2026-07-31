@@ -1,7 +1,7 @@
 import { memo, useCallback } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { ScrollViewProps } from 'react-native';
-import { Image } from 'expo-image';
+import { NitroImage } from 'react-native-nitro-image';
 import Animated, {
   SharedValue,
   interpolate,
@@ -32,14 +32,12 @@ const RowCell = memo(({ entry }: { entry: ListEntry }) => {
   return (
     <View style={entry.containerStyle}>
       {entry.items.map((item, index) => (
-        <Image
+        <NitroImage
           key={index}
-          source={item.source}
+          image={item.source}
           recyclingKey={item.id}
           style={item.style}
-          contentFit="cover"
-          cachePolicy="memory-disk"
-          allowDownscaling
+          resizeMode="cover"
         />
       ))}
     </View>
@@ -115,7 +113,7 @@ const GridList = ({
       ...scrollProps
     }: BridgeScrollProps) => (
       <AnimatedGHScrollView
-        ref={ref as React.Ref<React.ComponentRef<typeof GHScrollView>>}
+        ref={ref as React.ComponentProps<typeof AnimatedGHScrollView>['ref']}
         simultaneousHandlers={scrollSimultaneousHandlers}
         animatedProps={scrollEnabledProps}
         {...scrollProps}
@@ -146,7 +144,11 @@ const GridList = ({
       pointerEvents={active ? 'auto' : 'none'}
     >
       <AnimatedLegendList
-        refScrollView={listScrollRef}
+        refScrollView={
+          listScrollRef as React.ComponentProps<
+            typeof AnimatedLegendList
+          >['refScrollView']
+        }
         sharedValues={{ scrollOffset }}
         data={layout.listData}
         keyExtractor={keyExtractor}

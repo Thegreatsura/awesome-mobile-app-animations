@@ -8,7 +8,7 @@ interface DropAreaProps {
   onDropAreaLayout: (layout: Partial<Layout>) => void;
 }
 
-export const DropArea: React.FC<DropAreaProps> = ({ onDropAreaLayout }) => {
+export const DropArea = ({ onDropAreaLayout }: DropAreaProps) => {
   const ref = useRef<View>(null);
   useLayoutEffect(() => {
     ref.current?.measure((x, y, width, height, pageX, pageY) => {

@@ -9,6 +9,15 @@ import styles from './index.module.css';
 
 const animations = [
   {
+    app: 'Google Photos',
+    title: 'Grid List',
+    description:
+      'Pinch to zoom a justified photo grid between densities, with a date scrubber and shared-element full-screen transitions.',
+    tech: ['reanimated', 'gesture-handler'],
+    docLink: '/docs/animations/google-photos',
+    youtubeId: 'I4eRKuMuG4o',
+  },
+  {
     app: 'ChatGPT',
     title: 'Voice Profiles Fluid Orb',
     description:

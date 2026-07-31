@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
-import { Image } from 'expo-image';
+import { NitroImage } from 'react-native-nitro-image';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   SharedValue,
@@ -193,17 +193,15 @@ const FullScreenPhoto = ({
         >
           {photo ? (
             <View key={photo.id} style={StyleSheet.absoluteFill}>
-              <Image
-                source={{ uri: photo.uri }}
+              <NitroImage
+                image={{ url: photo.uri }}
                 style={StyleSheet.absoluteFill}
-                contentFit="cover"
-                cachePolicy="memory-disk"
+                resizeMode="cover"
               />
-              <Image
-                source={{ uri: photo.fullUri }}
+              <NitroImage
+                image={{ url: photo.fullUri }}
                 style={StyleSheet.absoluteFill}
-                contentFit="cover"
-                transition={200}
+                resizeMode="cover"
               />
             </View>
           ) : null}

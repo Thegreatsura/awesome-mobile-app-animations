@@ -13,11 +13,11 @@ interface ButtonProps {
   children: string;
 }
 
-export const Button: React.FC<ButtonProps> = ({
+export const Button = ({
   onPress: onPressProp,
   disabled,
   children,
-}) => {
+}: ButtonProps) => {
   const buttonScale = useSharedValue(1);
   const animatedButtonStyle = useAnimatedStyle(() => {
     return {

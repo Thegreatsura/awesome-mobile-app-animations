@@ -21,7 +21,7 @@ The animation uses:
 - **`react-native-reanimated`** to drive the pinch, zoom, and full-screen transitions on the native thread at 60fps
 - **`react-native-gesture-handler`** for the simultaneous pinch and scroll gestures
 - **`@legendapp/list`** to virtualize each grid list
-- **`expo-image`** for fast, cached thumbnail loading
+- **`react-native-nitro-image`** for fast, cached thumbnail loading
 - **`react-native-svg`** for the date scrubber thumb
 
 The grid supports three zoom levels (5, 3, and 1 columns). Photos are arranged with a Flickr-style **justified layout** so each row fills the width while preserving aspect ratios. During a pinch, the current level and the target level are cross-faded and scaled together, and the gesture commits to the new level once it passes a threshold.
